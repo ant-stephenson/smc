@@ -1,12 +1,14 @@
 
 eff_particle_no <- function(w) {
-  return(1/sum(w^2))
+  ess <- 1/sum(w^2)
+  return(ess)
 }
 
 systematic_resampling <- function(w) {
   U <- runif(1)
   N <- length(w)
   v <- cumsum(N * w)
+  print(v)
   s <- U
   m <- 1
   A <- 0*1:N
@@ -37,7 +39,7 @@ systematic_resampling <- function(w) {
 #     
 #   }
 # }
-bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/10) {
+bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/2) {
   ## initialise
   # sample N times from the prior
   xs <- fk_model$sample_m0(N)
@@ -47,6 +49,9 @@ bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/10) {
 
   ## run for t:T
   for (t in 1:tt) {
+    # print(eff_particle_no(w))
+    # print(ESSmin(N))
+    if (any(is.na(w))) {print(w)}
     if (eff_particle_no(w) < ESSmin(N)) {
       A <- systematic_resampling(w)
       ws <- rep(1/N, N)
@@ -55,7 +60,9 @@ bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/10) {
       ws <- w
     }
     xt <- fk_model$sample_m(t, xs[A])
-    wt <- ws * fk_model$logG(t, xs[A], xt)
+    wt <- ws * exp(fk_model$logG(t, xs[A], xt))
+    print(xs)
+    print(wt)
     xs <- xt
     w <- wt/sum(wt)
   }
@@ -63,7 +70,7 @@ bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/10) {
 }
 
 
-library(methods)
+require(methods)
 Bootstrap_SV <- setRefClass("Bootstrap_SV",
                             fields=list(data="matrix", mu="numeric", sigma="numeric", rho="numeric", tt="numeric", sigma0="numeric"),
                             methods =list(
@@ -82,15 +89,8 @@ Bootstrap_SV <- setRefClass("Bootstrap_SV",
                                 rnorm(length(xp), mean=.self$mu + .self$rho * (xp - .self$mu), sd = .self$sigma)
                               },
                               logG = function(t, xp, x) {
-                                dnorm(.self$data[t], mean=0, sd=exp(0.5 * x), log=TRUE)
+                                dnorm(.self$data[t], mean=0, sd=sqrt(exp(0.5 * x)), log=TRUE)
                               }
                             ))
 
-tt = 100
-Xt <- generate_SV_data(mu, rho, sigma2, tt)
-Yt <- as.matrix(rnorm(tt+1, 0, 1) * exp(Xt))
-boot_sv <- Bootstrap_SV$new(data=Yt, mu=-1, sigma=0.15, rho=0.9)
-
-N <- 10
-output <- bootstrap_filter(boot_sv, N, tt)
 
