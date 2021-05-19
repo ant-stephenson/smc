@@ -8,7 +8,6 @@ systematic_resampling <- function(w) {
   U <- runif(1)
   N <- length(w)
   v <- cumsum(N * w)
-  print(v)
   s <- U
   m <- 1
   A <- 0*1:N
@@ -42,31 +41,41 @@ systematic_resampling <- function(w) {
 bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/2) {
   ## initialise
   # sample N times from the prior
-  xs <- fk_model$sample_m0(N)
+  x <- matrix(rep(NA, (tt+1)*N), nrow=(tt+1))
+  x[1, ] <- fk_model$sample_m0(N)
+  
+  # mean output
+  mx <- rep(NA, tt)
   
   # initialise weights
   w <- rep(1/N, N)
+  s <- 1:N
 
   ## run for t:T
-  for (t in 1:tt) {
+  for (t in 2:(tt+1)) {
     # print(eff_particle_no(w))
     # print(ESSmin(N))
-    if (any(is.na(w))) {print(w)}
-    if (eff_particle_no(w) < ESSmin(N)) {
-      A <- systematic_resampling(w)
-      ws <- rep(1/N, N)
-    } else {
-      A <- 1:N
-      ws <- w
-    }
-    xt <- fk_model$sample_m(t, xs[A])
-    wt <- ws * exp(fk_model$logG(t, xs[A], xt))
-    print(xs)
-    print(wt)
-    xs <- xt
+    # if (any(is.na(w))) {print(w)}
+    # browser()
+    
+    
+    x[t, ] <- fk_model$sample_m(t, x[t-1, ])
+    wt <- exp(fk_model$logG(t, x[t, s], x[t, ]))
+    
     w <- wt/sum(wt)
+    
+    mx[t-1] <- sum(w*x[t,])
+    
+    if (eff_particle_no(w) < ESSmin(N)) {
+      s <- systematic_resampling(w)
+      w <- rep(1/N, N)
+    }
+
+    s <- sample(1:N, size=N, replace=TRUE, prob=w)
+    
+    x <- x[, s]
   }
-  return(list(w=w, x=xt))
+  return(list(w=w, x=x, mx=mx))
 }
 
 
@@ -89,7 +98,7 @@ Bootstrap_SV <- setRefClass("Bootstrap_SV",
                                 rnorm(length(xp), mean=.self$mu + .self$rho * (xp - .self$mu), sd = .self$sigma)
                               },
                               logG = function(t, xp, x) {
-                                dnorm(.self$data[t], mean=0, sd=sqrt(exp(0.5 * x)), log=TRUE)
+                                dnorm(.self$data[t], mean=xp, sd=sqrt(exp(0.5 * x)), log=TRUE)
                               }
                             ))
 
