@@ -45,10 +45,6 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
   x <- matrix(NA, ncol = N, nrow = (tmax + 1))
   # sample N times from the prior
   x[1, ] <- fk_model$sample_m0(N)
-  
-  # initialise mean and sd output
-  mx <- c()
-  sdx <- c()
   # initialise vector of ess
   ess <- c()
   
@@ -58,6 +54,12 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
   hw <- matrix(NA, ncol = N, nrow = tmax) # hat{w}_t
   w[1, ] <- exp(fk_model$logG(1, x[1, ]))
   W[1, ] <- w[1, ] / sum(w[1, ])
+  
+  # initialise mean and sd output
+  mx <- c()
+  sdx <- c()
+  mx[1] <- sum(W[1, ] * x[1, ])
+  sdx[1] <- sum((x[1, ] - mx[1])^2) / (N-1)
   
   # initialise ancestor variables
   A <- matrix(NA, ncol = N, nrow = tmax)
@@ -84,8 +86,8 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
     w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s]))
     W[t, ] <- w[t, ] / sum(w[t, ])
     # update mean and sd output
-    mx[t-1] <- sum(W[t, ] * x[t, ])
-    sdx[t-1] <- sum((x[t, ] - mx[t])^2) / (N-1)
+    mx[t] <- sum(W[t, ] * x[t, ])
+    sdx[t] <- sum((x[t, ] - mx[t])^2) / (N-1)
   }
   return(list(A = A, x = x, hw = hw, w = w, W = W, 
               mx = mx, sd = sd, r = r, ess = ess))
