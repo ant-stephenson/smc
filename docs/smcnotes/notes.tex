@@ -1,0 +1,289 @@
+\section{State-space models}
+
+A \textit{state-space model} is a time series model consisting of two discrete time processes $\cbr{X_t} \coloneqq \seqq{X}{t}$ and $\cbr{Y_t} \coloneqq \seqq{Y}{t}$ taking values in $\XX$ and $\YY$, respectively. The model is specified via a parameter vector $\theta \in \Theta$ and a set of densities defining the joint density of the processes:
+
+\beq
+  \pth{0} (x_0) \prodd[0]{t}{T} \fth{t} \cond{y_t}{x_t} \prodd{t}{T} \pth{t} \cond{x_t}{x_{t-1}}.
+\eeq
+
+This describes a generative probabilistic model: $X_0$ is drawn according to the initial density $\pth{0}(x_0)$, each $X_t$ is then drawn conditionally on the $X_{t-1} = x_{t=1}$ according to $\pth{t}\cond{x_t}{x_{t-1}}$, and then each $Y_t$ is drawn conditionally on $X_t = x_t$ according to $\fth{t}$.
+
+An informal definition of a state-space model is as a Markov chain observed with noise.
+
+\subsection{Sequential analysis}
+
+Process $\cbr{Y_t}$ is observed while $\cbr{X_t}$ is not, and the objective is to derive the distribution of certain $X_t$'s conditional on certain components of $\cbr{Y_t}$'s. Traditionally this is done without taking into account the parameter uncertainty ($\theta$ is assumed to be known and fixed).
+
+\textit{Sequential analysis} refers to drawing inference on the process $X_t$ sequentially in time at each $t$, given realised observations $y_{0:t}$ of $Y_{0:t}$ collected up to $t$. \textit{Filtering} refers to the task of deriving the distribution of $X_t$ conditional on $Y_{0:t} = y_{0:t}$, $t=0,1,\dots$.
+
+\subsection{Stochastic volatility models in finance}
+
+We are interested in modelling the volatility of log-returns,
+
+\beq
+  Y_t = \log \left(\frac{p_t}{p_{t-1}}\right),
+\eeq
+
+where $p_t$ is the price of an asset at time $t$. A standard approach is ARCH (auto-regressive conditional heteroscedastic) or GARCH (generalised ARCH) modelling, where the variance of $Y_t$ is a deterministic function of past data $Y_{0:t-1}$. A different approach takes the volatility to be a stochastic process.
+
+A basic \textit{stochastic volatility model} is
+
+\beq
+  Y_t | X_t = x_t \sim \N{\exp(x_t)},
+\eeq
+
+where $\cbr{X_t}$ is an auto-regressive process (define AR processes here?):
+
+\beq
+  X_t - \mu = \rho (X_{t-1} - \mu) + U_t,
+\eeq
+
+where $U_t \sim \N{\sigma^2}$ and $\theta \coloneqq \left(\mu, \rho, \sigma^2\right)$. Imposing $|\rho| < 1$ ensures that $\cbr{X_t}$ is a stationary processes. In practice we might expect $\rho \approxeq 1$ as financial data often exhibit volatility clustering (volatility remains high or low for long periods of time).
+
+Variants of the stochastic volatility model:
+
+\begin{itemize}
+  \item $Y_t|X_t$ may have heavier-than-Gaussian tails, e.g. follow a student distribution.
+  \item Account for a leverage effect by assuming the Guassian noises of $Y_t|X_t$ and $X_t|X_{t-1}$ are correlated.
+  \item Introduce skewness by taking $Y_t = \alpha X_t + \exp(X_t/2) V_t$.
+\end{itemize}
+
+The volatility might be assumed to be an AR process of order $k>1$. In which case, we can retain the basic structure of a state-space model by increasing the dimension of $\cbr{X_t}$. If $\XX = \R^2$ then
+
+\beq
+  X_t - \binom{\mu}{\mu} = \begin{pmatrix} \rho_1 & \rho_2 \\ 1 & 0 \end{pmatrix} \left(X_{t-1} - \binom{\mu}{\mu}) + \binom{U_t}{0}\right),
+\eeq
+
+where $U_t \sim \N{\sigma^2}$. Then $X_t(1)$ is an AR process of order 2,
+
+\beq
+  X_t(1) - \mu = \rho_1 (X_{t-1}(1) - \mu) + \rho_2 (X_{t-2}(1) - \mu) + U_t,
+\eeq
+
+and we can take $\Var{Y_t | X_t} = \exp\left(X_t(1)\right)$.
+
+\section{Feynman-Kac models}
+
+Start with a \textit{Markov probability law} defined on a state space $\XX$ with initial distribution $\M_)$ and transition kernels $M_{1:T}$:
+
+\beq
+  \M_T (dx_{0:T}) = \M_0 (dx_0) \prodd{t}{T} M_t(x_{t-1}, dx_t).
+\eeq
+
+Consider a sequence of \textit{potential functions} $G_0 : \XX \to \R^+$ and $G_t: \XX^2 \to \R^+$, $t=1, \dots, T$. For $t=0, \dots, T$, a sequence of Feynman-Kac models is given by probability measures on $\left(\XX^{t+1}, \mathcal{B} (\XX)^{t+1}\right)$, obtained as the following changes of measure from $\M_t$:
+
+\beq
+  \Q_t(dx_{0:t}) \coloneqq \frac{1}{L_t} G_0 (x_0) \cbr{\prodd{s}{t} G_s(x_{s-1}, x_s)} \M_t(dx_{0:t}),
+\eeq
+
+where $L_t$ is the normalising constant needed for $\Q_t$ to be a probability measure.
+
+We refer to $T$, $\M_0$, $G_0$ and $M_t(x_{t-1}, dx_t)$, $G_t(x_{t-1}, x_t)$, $t=1, \dots, T$ as the components of the Feynman-Kac model.
+
+\subsection{Feynman-Kac formalisms of a state-space model}
+
+Consider a state-space model with initial distribution $\PP_0(dx_0)$, signal transition kernels $P_t(x_{t-1}, dx_t)$, and observation densities $f_t(y_t | x_t)$. We define its \textit{bootstrap Feynman-Kac formalism} to be the Feynman-Kac model with the components:
+
+\begin{align}
+  \M_0 (dx_0) &= \PP_0(dx_0), \quad \quad \quad \quad \quad \, \, G_0(x_0) = f_0(y_0 | x_0), \label{eq:bfk} \\
+  M_t(x_{t-1}, dx_t) &= P_t(x_{t-1}, dx_t), \quad G_t (x_{t-1}, x_t) = f_t(y_t | x_t). \label{eq:bfk2}
+\end{align}
+
+Then
+
+\begin{align}
+  \Q_{t-1} (dx_{0:t}) &= \PP_t\left(X_{0:t} \in dx_{0:t} \left| Y_{0:t-1} = y_{0:t-1}\right.\right), \\
+  \Q_t (dx_{0:t}) &= \PP_t \left(X_{0:t} \in dx_{0:t} \left| Y_{0:t} = y_{0:t}\right.\right), \\
+  L_t &= p_t(Y_{0:t}), \\
+  l_t &\coloneqq \frac{L_t}{L_{t-1}} = p_t\cond{y_t}{y_{0:t-1}}.
+\end{align}
+
+The potential functions $G_t$ for $t \geq 1$ depend only on $x_t$, and $G_t$ depends implicitly on the (fixed) datapoint $y_t$.
+
+\section{Resampling}
+
+\textit{Resampling}: the action of drawing randomly from a weighted sample, so as to obtain an unweighted sample. We can view resampling as a random weight importance sampling technique.
+
+Suppose we have the following particle approximation of measure $\Q_0(dx_0)$:
+
+\beq
+  \Q_0^N(dx_0) = \summ{n}{N} W_0^N \delta_{X_0^n}, \quad \quad, X_0^n \sim \M_0, \quad \quad W_0^n = \frac{w_0(X_0^n)}{\summ{m}{N} w_0 (X_0^m)},
+\eeq
+
+obtained through importance sampling based on the proposal $\M_0$ and weight function $w_0 \propto d\Q_0 / d\M_0$. We want to use this to approximate the extended probability measure
+
+\begin{equation}
+  (\Q_0 M_1) (dx_{0:1}) = \Q_0 (dx_0) M_1 (x_0, dx_1). \label{eq:pm}
+\end{equation}
+
+\textit{Importance resampling} uses a two-step approximation: first replace $\Q_0$ by $\Q_0^N$ in \refeqq{eq:pm},
+
+\begin{equation}
+  \Q_0^N (dx_0) M_1 (x_0, dx_1) = \summ{n}{N} W_0^n M_1 (X_0^n, dx_1) \delta_{X_0^n} (dx_0), \label{eq:pmappr}
+\end{equation}
+
+and then sample $N$ times from this intermediate approximation to form
+
+\beq
+  \frac{1}{N} \summ{n}{N} \delta_{\tilde{X}_{0:1}^n}, \quad \quad \tilde{X}_{0:1}^n \sim \Q_0^N (dx_0) M_1(x_0, dx_1).
+\eeq
+
+The simplest way to sample from \refeqq{eq:pmappr}: for $n = 1, \dots, N$, sample independently the pairs $(A_1^n, \tilde{X}_{0:1}^n)$ as
+
+\beq
+  A_1^n \sim \MM (W_0^{1:N}), \quad \quad \tilde{X}_{0:1}^N = \left(X_0^{A_1^n}, X_1^n\right), \quad \quad X_1^n \sim M_1\left(X_0^{A_1^n}, dx_1\right),
+\eeq
+
+where $\MM (W_0^{1:N})$ is the multinomial distribution that generates value $n$ with probability $W_0^n$, for $n = 1, \dots, N$.
+
+\subsection{Multinomial resampling}
+
+\textit{Multinomial resampling} describes an efficient algorithm for simulating the \textit{ancestor} variables $A^n$ from the multinomial distribution $\MM (W^{1:N})$.
+
+Use the inverse CDF transformation method: generate $N$ uniform variates $U^m$, $m = 1, \dots, N$, and set $A^m$ according to
+
+\beq
+  C^{n-1} \leq U^m \leq C^n \quad \iff \quad A^m = n,
+\eeq
+
+where the $C^n$'s are the cumulative weights:
+
+\beq
+  C^0 = 0, \quad C^n = \summ{l}{n} W^l, \quad n = 1, \dots, N.
+\eeq
+
+Each individual simulation requires $\bigO{N}$ comparisons to be made, so $\bigO{N^2}$ comparisons should be performed to generate $N$ draws. However, if the $U^m$ are ordered in a preliminary step we obtain an algorithm with $\bigO{N}$ complexity.
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{Normalised weights $W^{1:N}$ and ordered uniform points $0 < U\br{1} < \dots < U\br{N} < 1$.}
+  \KwOut{Ordered ancestor variables $1 \leq A^1 \leq \dots \leq A^N \leq N$ in \{1, \dots, N\}.}
+  Initialise $s \leftarrow W^1$, $m \leftarrow 1$. \;
+  \For{$n = 1, \dots, N$}{
+    \While{$s < U\br{n}$}{
+      $m \leftarrow m + 1$. \;
+      $s \leftarrow s + W^m$. \;
+    }
+    $A^n \leftarrow m$. \;
+  }
+  \caption{Computing the inverse of the multinomial CDF $x \to \summ{n}{N} W^n \mathbb{I}\cbr{n \leq x}$.}
+  \label{alg:icdf}
+\end{algorithm}
+
+Note the $A^n$ are not i.i.d. draws from $\MM(W^{1:N})$ but correspond to the order statistics of a vector of $N$ draws from this distribution.
+
+To generate the \textit{uniform spacings} $0 < U\br{1} < \dots < U\br{N} < 1$, we use an $\bigO{N}$ algorithm.
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{An integer $N$}.
+  \KwOut{An ordered sequence $0 < U\br{1} < \dots < U\br{N} < 1$ in $(0,1).$}
+  Initisalise $S^0 \leftarrow 0.$ \;
+  \For{n = 1, \dots, N+1}{
+    Draw $E^n \sim \mathcal{E}(1)$. \;
+    $S^n \leftarrow S^{n-1} + E^n.$ \;
+  }
+  \For{n = 1, \dots, N}{
+    $U\br{n} \leftarrow S^n / S^{N+1}$. \;
+  }
+  \caption{Generation of uniform spacings.}
+  \label{alg:us}
+\end{algorithm}
+
+The overall approach for multinomial resampling is then:
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{Normalised weights $W^{1:N}$ such that $\summ{n}{N} W^n = 1$ and $W^n \geq 0$, $n=1, \dots, N$.}
+  \KwOut{$N$ draws from $\MM(W^{1:n})$.}
+  Obtain $U\br{1:N}$ via Algorithm \ref{alg:us}. \;
+  Obtain $A^{1:N}$ via Algorithm \ref{alg:icdf}. \;
+  \caption{Multinomial resampling.}
+  \label{alg:mr}
+\end{algorithm}
+
+Can be interpreted as a random weight importance technique with random weight $\W^n$ such that
+
+\begin{itemize}
+  \item $\W^n$ is integer-valued and represents the number of offsprings of particle $n$;
+  \item $\Exp{W^n} = NW^n$;
+  \item $\summ{n}{N}\W^n = N$.
+\end{itemize}
+
+Any method that generates ancestor variables $A^{1:N}$ such that the number of copies $\W^n = \summ{m}{n} \mathbb{I}\cbr{A^m = n}$ fulfilles the above three properites will be an \textit{unbiased resampling scheme}, satisfying
+
+\beq
+  \cExp{\frac{1}{N} \summ{n}{N} \varphi\left(X^{A^n}\right)}{X^{1:N}} = \cExp{\frac{1}{N} \summ{n}{N} \W^n \varphi(X^n)}{X^{1:N}} = \summ{n}{N} W^n \varphi(X^n).
+\eeq
+
+That is, it generates an unweighted sample that provides estimates with the same expectation (but increased variance) as the original weighted sample.
+
+\subsection{Systematic resampling}
+
+A strategy for variance reduction is to replace the i.i.d. uniforms by values that cover $[0,1]$ more regularly. A \textit{systematic resampling approach} is similar to Algorithm \ref{alg:icdf}, specialised to the structure of the $U\br{n}$'s. We simulate a single uniform random variable $U \sim \mathcal{U}\left([0,1]\right)$ and take $U\br{n} = (n-1+U)/N$.
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{Normalised weights $W^{1:N}$ and $U \in [0, 1]$.}
+  \KwOut{$N$ random indices $A^{1:N}$ taking values in $1:N$.}
+  Initialise $s \leftarrow U$ and $m \leftarrow 1$. \;
+  Compute the cumulative weights $v^n \coloneqq \summ{m}{n} NW^m$, $n = 1, \dots, N$. \;
+  \For{$n = 1, \dots, N$}{
+    \While{$v^m < s$}{
+      Update $m \leftarrow m+1$, $A^n \leftarrow m$, $s \leftarrow s+1$.
+    }
+  }
+  \caption{Systematic resampling approach for obtaining ancestor variables $A^{1:N}$.}
+  \label{alg:sr}
+\end{algorithm}
+
+This is unbiased: $\Exp{\mathcal{W}^n} = NW^n$.
+
+Compared to other variance reduction schemes (not discussed here), systematic resampling is often recommended in practice as it is fast and tends to (empirically) work better than other schemes in that it yields lower-variance estimates.
+
+\section{The bootstrap filter for state-space models}
+
+Consider a state space model $\cbr{(X_t, Y_t)}$ with initial law $\PP_0$, transition kenels $P_t(x_{t-1}, dx_t)$ and observation densities $f_t\cond{y_t}{x_t}$. Consider the basic Feynman-Kac representation of the model \refeqq{eq:bfk}, \refeqq{eq:bfk2}, for $t \geq 1$.
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{A state-space model such that we can simulate from $\PP_0(dx_0)$ and from $P_t(x_{t-1}, dx_t)$ for each $x_{t-1}$ and $t$, and compute the function $f_t\cond{y_t}{x_t}$ point-wise, a number of particles $N$, a choice of a resampling scheme, and an ESS threshold $\essmin$.}
+  \KwOut{$\hat{w}_0^n, \dots, \hat{w}_{T-1}^n$, $X_1^n, \dots, X_T^n$, $w_0^n, \dots, w_T^n$, $W_0^n, \dots, W_T^n$, for $n = 1, \dots, N$.}
+  All operations involving index $n$ must be performed for $n=1, \dots, N$. \;
+  Simulate $X_0^n \sim \M_0(dx_0)$. \;
+  $w_0^n \leftarrow G_0(X_0^n)$. \;
+  $W_0^n \leftarrow w_0^n / \summ{m}{M} w_0^m$. \;
+  \For{$t=1, \dots, T$}{
+    \If{$\ess(W_{t-1}^{1:N}) < \essmin$}{
+      Resample $A_t^{1:N}$ with weights $W_{t-1}^{1:N}$. \;
+      $\hat{w}_{t-1}^n \leftarrow 1$. \;
+    }
+    \Else{
+      $A_n^t \leftarrow n$. \;
+      $\hat{w}_{t-1}^n \leftarrow w_{t-1}^n$. \;
+    }
+    Draw $X_t^n \sim P_t \cond{X_{t-1}^{A_t^n}}{dx_t}$. \;
+    $w_t^n \leftarrow \hat{w}_{t-1}^n f_t \cond{y_t}{X_t^n}$. \;
+    $W_t^n \leftarrow w_t^n / \summ{m}{N} w_t^m$.
+  }
+  \caption{The bootstrap filter for state-space models with adaptive resampling (resampling only when the ESS is too low -- reduces computational time of the algorithm).}
+\end{algorithm}
+
+At each time $t=1, \dots, T$, we generate simulations from the law of the Markov chain $\cbr{X_t}_{t \geq 1}$, weight these simulations according to how ``compatible'' they are with the datapoint $Y_t$, and resample if necessary. We obtain the approximations:
+
+\begin{align*}
+    \frac{1}{\summ{n}{N} \hat{w}_{t-1}^n} \summ{n}{N} \hat{w}_{t-1}^n \varphi(X_t^n) &\approx \cExp{\varphi(X_t)}{Y_{0:t-1} = y_{0:t-1}} \\
+    \summ{n}{N} W_t^n \varphi(X_t^n) &\approx \cExp{\varphi(X_t)}{Y_{0:t} = y_{0:t}} \\
+    \ell_t^N &\approx p_t\cond{y_t}{y_{0:t-1}} \\
+    L_t^N = \prodd{s}{t} \ell_s^N &\approx p(y_{0:t})
+  \end{align*}
+
+where
+
+\beq
+  \ell_t^N = \left\{ \begin{array}{cl} \frac{1}{N} \summ{n}{N} w_t^n & \text{if resampling occurred at time }t, \\ \frac{\summ{n}{N} w_t^n}{\summ{n}{N} w_{t-1}^n} & \text{otherwise} \end{array}\right.
+\eeq
+
+Note $\approx$ means the LHS approximates the RHS: that is, the approximation error tends to zero as $N \to \infty$ with rate $\bigO{N^{-\frac{1}{2}}}$ (the standard Monte Carlo rate).
+
+The bootstrap filter is very simple and widely applicable with few requirements. However, if samples particles $X_t$ ``blindly'' from $P_t(x_{t-1}, dx_t)$ without any guarantee that these simulated particles will be compatible with the datapoint $y_t$ (i.e. have non-negligible weights).

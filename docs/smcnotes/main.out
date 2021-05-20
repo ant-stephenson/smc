@@ -1,0 +1,9 @@
+\BOOKMARK [1][-]{section.1}{State-space models}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Sequential analysis}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Stochastic volatility models in finance}{section.1}% 3
+\BOOKMARK [1][-]{section.2}{Feynman-Kac models}{}% 4
+\BOOKMARK [2][-]{subsection.2.1}{Feynman-Kac formalisms of a state-space model}{section.2}% 5
+\BOOKMARK [1][-]{section.3}{Resampling}{}% 6
+\BOOKMARK [2][-]{subsection.3.1}{Multinomial resampling}{section.3}% 7
+\BOOKMARK [2][-]{subsection.3.2}{Systematic resampling}{section.3}% 8
+\BOOKMARK [1][-]{section.4}{The bootstrap filter for state-space models}{}% 9
