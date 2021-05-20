@@ -21,23 +21,6 @@ systematic_resampling <- function(W) {
 }
 
 
-# bootstrap_filter <- function(prior, dyn_model, lik N) {
-#   # sample N times from the prior
-#   x0 <- prior.sample(N)
-#   
-#   # importance sampling, zt = \tilde{x_t}
-#   for (i in 1:N) {
-#     z0[i] <- dyn_model.sample()
-#     # update \tilde{x_0:t}
-#     _w0[i] <- lik(y0,x0)
-#   }
-#   # normalise weights
-#   w0 <- _w0/sum(_w0)
-#   
-#   for (t in 1:tt) {
-#     
-#   }
-# }
 bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
   # compute threshold
   essmin <- essmin_fn(N)

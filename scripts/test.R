@@ -4,14 +4,6 @@ library(smc)
 
 set.seed(1)
 
-# # not the same for whatever reason, so use test version
-# test_Xt <- test_generate_SV_data(mu, rho, sigma2, tt)
-# Xt <- generate_SV_data(mu, rho, sigma2, tt)
-# Yt <- rnorm(tt, 0, 1) * exp(Xt)
-# 
-# print(test_Xt)
-# print(Xt)
-
 tmax <- 500
 mu <- -1
 rho <- 0.95
