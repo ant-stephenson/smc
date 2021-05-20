@@ -38,7 +38,9 @@ systematic_resampling <- function(W) {
 #     
 #   }
 # }
-bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
+bootstrap_filter <- function(fk_model, N, tmax, 
+                             resampling = systematic_resampling,
+                             essmin_fn = function(N) N/2) {
   # compute threshold
   essmin <- essmin_fn(N)
   # initialise simulated values of X
@@ -72,7 +74,7 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
     # resampling step
     if (ess[t-1] < essmin) {
       r <- c(r, t-1)
-      A[t-1, ] <- systematic_resampling(W[t-1, ])
+      A[t-1, ] <- resampling(W[t-1, ])
       hw[t-1, ] <- rep(1, N)
     } else {
       A[t-1, ] <- 1:N
@@ -87,10 +89,10 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
     W[t, ] <- w[t, ] / sum(w[t, ])
     # update mean and sd output
     mx[t] <- sum(W[t, ] * x[t, ])
-    sdx[t] <- sum((x[t, ] - mx[t])^2) / (N-1)
+    sdx[t] <- sqrt(sum((x[t, ] - mx[t])^2) / (N-1))
   }
   return(list(A = A, x = x, hw = hw, w = w, W = W, 
-              mx = mx, sd = sd, r = r, ess = ess))
+              mx = mx, sdx = sdx, r = r, ess = ess))
 }
 
 
