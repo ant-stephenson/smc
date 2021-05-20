@@ -1,0 +1,11 @@
+[0] Config.pm:304> INFO - This is Biber 2.14 (beta)
+[0] Config.pm:307> INFO - Logfile is 'main.blg'
+[70] biber:322> INFO - === Tue May 18, 2021, 16:03:45
+[88] Biber.pm:415> INFO - Reading 'main.bcf'
+[149] Biber.pm:943> INFO - Found 1 citekeys in bib section 0
+[160] Biber.pm:4256> INFO - Processing section 0
+[161] Utils.pm:75> INFO - Globbing data source 'bibliography.bib'
+[161] Utils.pm:91> INFO - Globbed data source 'bibliography.bib' to bibliography.bib
+[173] Biber.pm:4455> INFO - Looking for bibtex format file 'bibliography.bib' for section 0
+[189] Utils.pm:309> ERROR - Cannot find 'bibliography.bib'!
+[189] Biber.pm:132> INFO - ERRORS: 1
