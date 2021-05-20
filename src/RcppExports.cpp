@@ -5,14 +5,19 @@
 
 using namespace Rcpp;
 
-// systematic_resampling
-IntegerVector systematic_resampling(const NumericVector W);
-RcppExport SEXP _smc_systematic_resampling(SEXP WSEXP) {
+// run_bootstrap_filter
+List run_bootstrap_filter(NumericVector data, float mu, float sigma, float rho, int N, int tmax);
+RcppExport SEXP _smc_run_bootstrap_filter(SEXP dataSEXP, SEXP muSEXP, SEXP sigmaSEXP, SEXP rhoSEXP, SEXP NSEXP, SEXP tmaxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const NumericVector >::type W(WSEXP);
-    rcpp_result_gen = Rcpp::wrap(systematic_resampling(W));
+    Rcpp::traits::input_parameter< NumericVector >::type data(dataSEXP);
+    Rcpp::traits::input_parameter< float >::type mu(muSEXP);
+    Rcpp::traits::input_parameter< float >::type sigma(sigmaSEXP);
+    Rcpp::traits::input_parameter< float >::type rho(rhoSEXP);
+    Rcpp::traits::input_parameter< int >::type N(NSEXP);
+    Rcpp::traits::input_parameter< int >::type tmax(tmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(run_bootstrap_filter(data, mu, sigma, rho, N, tmax));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -29,7 +34,7 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_smc_systematic_resampling", (DL_FUNC) &_smc_systematic_resampling, 1},
+    {"_smc_run_bootstrap_filter", (DL_FUNC) &_smc_run_bootstrap_filter, 6},
     {"_smc_parallelVectorSum", (DL_FUNC) &_smc_parallelVectorSum, 1},
     {NULL, NULL, 0}
 };

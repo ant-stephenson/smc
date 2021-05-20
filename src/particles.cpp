@@ -3,6 +3,9 @@
 #include "particles.h"
 using namespace Rcpp;
 
+// [[Rcpp::depends(utils]]
+// [[Rcpp::plugins(cpp14)]] 
+
 double eff_particle_no(
     const NumericVector w 
 ) 
@@ -11,7 +14,7 @@ double eff_particle_no(
   return ess;
 }
 
-// [[Rcpp::export(name = "systematic_resampling_rcpp")]]
+// // [[Rcpp::export(name = "systematic_resampling_rcpp")]]
 IntegerVector systematic_resampling(const NumericVector W) {
   int N = W.length();
   NumericVector v = cumsum(W);
@@ -28,7 +31,7 @@ IntegerVector systematic_resampling(const NumericVector W) {
   return A;
 }
 
-// [[Rcpp::export(name = "Bootstrap_SV_rcpp")]]
+// // [[Rcpp::export(name = "Bootstrap_SV_rcpp")]]
 Bootstrap_SV::Bootstrap_SV(NumericVector data, float mu, float sigma, float rho)
 {
   this->_data = data;
@@ -66,13 +69,16 @@ NumericVector Bootstrap_SV::logG(int t, NumericVector x)
   return logg;
 }
 
+
 float essmin_fn(int N) {
   return (float)N/2.0;
 }
 
-// [[Rcpp::export(name = "bootstrap_filter_rcpp")]]
-FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(int)) {
-  float essmin = (*f)(N);
+
+// // [[Rcpp::export(name = "bootstrap_filter_rcpp")]]
+List bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
+  //float essmin = (*f)(N);
+  float essmin = essmin_fn(N);
   
   // initialise simulated values of X
   NumericMatrix x(N, tmax+1);
@@ -115,11 +121,11 @@ FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(
     s = s - 1;
     
     // draw X_t from transition kernel
-    NumericVector xp = index(x, t-1, s);
+    NumericVector xp = ncindex(x, t-1, s);
     x(t, _) = fk_model.sample_m(xp);
     
     // update weights
-    NumericVector xt = index(x, t, s);
+    NumericVector xt = ncindex(x, t, s);
     w = hw * exp(fk_model.logG(t, xt));
     W(t, _) = w / sum(w);
     
@@ -128,9 +134,17 @@ FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(
     sdx(t-1) = sqrt(sum(pow(x(t, _) - mx(t), 2.0) / (float)(N-1)));
   }
  
-  FilterOutput output(A, x, hw, W, mx, sdx, r, ess);
+  // FilterOutput output(A, x, hw, W, mx, sdx, r, ess);
+  List output = List::create(_["A"] = A, _["x"] = x, _["hw"] = hw, _["W"] = W, 
+                             _["mx"] = mx, _["sdx"] = sdx, _["r"] = r, _["ess"] = ess);
   
   return output;
+}
+
+// [[Rcpp::export(name = "run_bootstrap_filter")]]
+List run_bootstrap_filter(NumericVector data, float mu, float sigma, float rho, int N, int tmax) {
+  Bootstrap_SV fk_model(data, mu, sigma, rho);
+  return bootstrap_filter(fk_model, N, tmax);
 }
 
 // You can include R code blocks in C++ files processed with sourceCpp
