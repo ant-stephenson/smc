@@ -4,22 +4,22 @@ eff_particle_no <- function(w) {
   return(ess)
 }
 
-systematic_resampling <- function(w) {
-  U <- runif(1)
-  N <- length(w)
-  v <- cumsum(N * w)
-  s <- U
-  m <- 1
-  A <- 0*1:N
+systematic_resampling <- function(W) {
+  N <- length(W)
+  v <- cumsum(W)
+  s <- runif(1, 0, 1/N)
+  A <- rep(0, N)
+  m <- 0
   for (n in 1:N) {
-    while (v[m] < s) {
+    while (v[n] > s) {
       m <- m + 1
-      A[n] <- m
-      s <- s + 1
+      s <- s + 1/N
     }
+    A[n] <- ifelse(m == 0, 1, m)
   }
   return(A)
 }
+
 
 # bootstrap_filter <- function(prior, dyn_model, lik N) {
 #   # sample N times from the prior
@@ -38,68 +38,83 @@ systematic_resampling <- function(w) {
 #     
 #   }
 # }
-bootstrap_filter <- function(fk_model, N, tt, ESSmin=function(N) N/2) {
-  ## initialise
+bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
+  # compute threshold
+  essmin <- essmin_fn(N)
+  # initialise simulated values of X
+  x <- matrix(NA, ncol = N, nrow = (tmax + 1))
   # sample N times from the prior
-  x <- matrix(rep(NA, (tt+1)*N), nrow=(tt+1))
   x[1, ] <- fk_model$sample_m0(N)
   
-  # mean output
-  mx <- rep(NA, tt)
+  # initialise mean output
+  #mx <- rep(NA, tmax)
   
   # initialise weights
-  w <- rep(1/N, N)
-  s <- 1:N
-
-  ## run for t:T
-  for (t in 2:(tt+1)) {
-    # print(eff_particle_no(w))
-    # print(ESSmin(N))
-    # if (any(is.na(w))) {print(w)}
-    # browser()
-    
-    
-    x[t, ] <- fk_model$sample_m(t, x[t-1, ])
-    wt <- exp(fk_model$logG(t, x[t, s], x[t, ]))
-    
-    w <- wt/sum(wt)
-    
-    mx[t-1] <- sum(w*x[t,])
-    
-    if (eff_particle_no(w) < ESSmin(N)) {
-      s <- systematic_resampling(w)
-      w <- rep(1/N, N)
+  w <- matrix(NA, ncol = N, nrow = (tmax + 1)) # w_t
+  W <- matrix(NA, ncol = N, nrow = (tmax + 1)) # W_t
+  hw <- matrix(NA, ncol = N, nrow = tmax) # hat{w}_t
+  w[1, ] <- exp(fk_model$logG(t, x[1, ]))
+  W[1, ] <- w[1, ] / sum(w[1, ])
+  
+  # initialise ancestor variables
+  A <- matrix(NA, ncol = N, nrow = tmax)
+  # resampling times
+  r <- c()
+  
+  for (t in 2:(tmax+1)) {
+    # resampling step
+    if (eff_particle_no(W[t-1, ]) < essmin) {
+      r <- c(r, t-1)
+      A[t-1, ] <- systematic_resampling(W[t-1, ])
+      hw[t-1, ] <- rep(1, N)
+    } else {
+      A[t-1, ] <- 1:N
+      hw[t-1, ] <- w[t-1, ]
     }
-
-    s <- sample(1:N, size=N, replace=TRUE, prob=w)
+    s <- A[t-1, ]
     
-    x <- x[, s]
+    # draw X_t from transition kernel
+    x[t, ] <- fk_model$sample_m(x[t-1, s])
+    # update mean output
+    mx[t-1] <- sum(w * x[t, ])
+    # update weights
+    w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s]))
+    W[t, ] <- w[t, ] / sum(w[t, ])
   }
-  return(list(w=w, x=x, mx=mx))
+  return(list(A = A, x = x, hw = hw, w = w, W = W, mx = mx, r = r))
 }
 
 
 require(methods)
 Bootstrap_SV <- setRefClass("Bootstrap_SV",
-                            fields=list(data="matrix", mu="numeric", sigma="numeric", rho="numeric", tt="numeric", sigma0="numeric"),
-                            methods =list(
-                              initialize = function(data, mu=0, sigma=1, rho=0.95) {
-                                .self$data = data
-                                .self$tt = length(data)
-                                .self$mu = mu
-                                .self$sigma = sigma
-                                .self$rho = rho
-                                .self$sigma0 = sigma/sqrt(1-rho^2)
-                              },
-                              sample_m0 = function(N) {
-                                rnorm(N, mean=.self$mu, sd=.self$sigma0)
-                              },
-                              sample_m = function(t, xp) {
-                                rnorm(length(xp), mean=.self$mu + .self$rho * (xp - .self$mu), sd = .self$sigma)
-                              },
-                              logG = function(t, xp, x) {
-                                dnorm(.self$data[t], mean=xp, sd=sqrt(exp(0.5 * x)), log=TRUE)
-                              }
-                            ))
+                             fields = list(
+                               data = "matrix", 
+                               mu = "numeric", 
+                               sigma = "numeric", 
+                               rho = "numeric", 
+                               tmax = "numeric", 
+                               sigma0 = "numeric"),
+                             methods = list(
+                               initialize = function(data, mu = 0, sigma = 1, rho = 0.95) {
+                                 .self$data = data
+                                 .self$tmax = length(data)
+                                 .self$mu = mu
+                                 .self$sigma = sigma
+                                 .self$rho = rho
+                                 .self$sigma0 = sigma / sqrt(1 - rho^2)
+                               },
+                               sample_m0 = function(N) {
+                                 rnorm(N, mean = .self$mu, sd = .self$sigma0)
+                               },
+                               sample_m = function(xp) {
+                                 rnorm(length(xp), 
+                                       mean = .self$mu + .self$rho * (xp - .self$mu), 
+                                       sd = .self$sigma)
+                               },
+                               logG = function(t, x) {
+                                 dnorm(.self$data[t], mean = 0, 
+                                       sd = sqrt(exp(x)), log = TRUE)
+                               }
+                             ))
 
 

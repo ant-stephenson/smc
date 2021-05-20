@@ -12,17 +12,18 @@ set.seed(1)
 # print(test_Xt)
 # print(Xt)
 
-tt = 100
-mu = -1
-rho = 0.95
-sigma2 = 0.15
+tmax <- 500
+mu <- -1
+rho <- 0.95
+sigma <- 0.15
 
-Xt <- generate_SV_data(mu, rho, sigma2, tt)
-Yt <- as.matrix(rnorm(tt+1, 0, 1) * sqrt(exp(0.5*Xt)))
-boot_sv <- Bootstrap_SV$new(data=Yt, mu=-1, sigma=0.15, rho=0.95)
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax+1, 0, 1) * exp(Xt))
+boot_sv <- Bootstrap_SV$new(data = Yt, mu = -0, sigma = 1, rho = 0.8)
 
-N <- 100
-output <- bootstrap_filter(boot_sv, N, tt)
+N <- 1000
+output <- bootstrap_filter(boot_sv, N, tmax)
+str(output)
 
-plot(Yt)
-lines(output$mx)
+plot(Yt, type = "l")
+lines(output$mx, col = "red")
