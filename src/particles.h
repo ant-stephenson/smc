@@ -36,12 +36,16 @@ struct FilterOutput
   Rcpp::NumericVector hw;
   Rcpp::NumericMatrix W;
   Rcpp::NumericVector mx;
+  Rcpp::NumericVector sdx;
   Rcpp::IntegerVector r;
+  Rcpp::IntegerVector ess;
+  
   
   FilterOutput(const Rcpp::IntegerMatrix A, const Rcpp::NumericMatrix x, 
                const Rcpp::NumericVector hw, const Rcpp::NumericMatrix W,
-               const Rcpp::NumericVector mx, const Rcpp::IntegerVector r) 
-    : A(A), x(x), hw(hw), W(W), mx(mx), r(r) {}
+               const Rcpp::NumericVector mx, const Rcpp::NumericVector sdx,
+               const Rcpp::IntegerVector r, const Rcpp::IntegerVector ess) 
+    : A(A), x(x), hw(hw), W(W), mx(mx), sdx(sdx), r(r), ess(ess) {}
 };
 
 float essmin_fn(int N);

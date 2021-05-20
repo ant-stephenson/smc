@@ -1,4 +1,5 @@
 #include <Rcpp.h>
+#include "utils.h"
 #include "particles.h"
 using namespace Rcpp;
 
@@ -69,16 +70,6 @@ float essmin_fn(int N) {
   return (float)N/2.0;
 }
 
-NumericVector index(NumericMatrix m, int r, IntegerVector c) {
-  int len = c.length();
-  NumericVector non_contiguous_row(len);
-  
-  for (int i=0; i<=len; i++) {
-    non_contiguous_row[i] = m(r, c(i));
-  }
-  return non_contiguous_row;
-}
-
 // [[Rcpp::export(name = "bootstrap_filter_rcpp")]]
 FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(int)) {
   float essmin = (*f)(N);
@@ -88,8 +79,12 @@ FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(
   // sample N times from the prior
   x(0, _) = fk_model.sample_m0(N);
   
-  // initialise mean output
+  // initialise mean and sd output
   NumericVector mx(tmax);
+  NumericVector sdx(tmax);
+  
+  // initialise ess storage
+  IntegerVector ess(tmax);
   
   // initialise weights
   NumericVector w(N);
@@ -106,7 +101,8 @@ FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(
   IntegerVector r;
   
   for (int t=1; t<=tmax; t++) {
-    if (eff_particle_no(W(t-1, _)) < essmin) {
+    ess(t-1) = eff_particle_no(W(t-1, _));
+    if (ess(t-1) < essmin) {
       r.push_back(t-1);
       A(t-1, _) = systematic_resampling(W(t-1, _));
       hw = 0*hw + 1;
@@ -127,25 +123,15 @@ FilterOutput bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax, float(*f)(
     w = hw * exp(fk_model.logG(t, xt));
     W(t, _) = w / sum(w);
     
-    // update mean output
+    // update mean and sd output
     mx(t-1) = sum(W(t, _) * x(t, _));
+    sdx(t-1) = sqrt(sum(pow(x(t, _) - mx(t), 2.0) / (float)(N-1)));
   }
  
-  FilterOutput output(A, x, hw, W, mx, r);
+  FilterOutput output(A, x, hw, W, mx, sdx, r, ess);
   
   return output;
 }
-
-/**
-# update weights
-            w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s]))
-            W[t, ] <- w[t, ] / sum(w[t, ])
-# update mean output
-            mx[t-1] <- sum(W * x[t, ], na.rm=TRUE)
-        }
-        return(list(A = A, x = x, hw = hw, w = w, W = W, mx = mx, r = r))
-}
-**/
 
 // You can include R code blocks in C++ files processed with sourceCpp
 // (useful for testing and development). The R code will be automatically 
