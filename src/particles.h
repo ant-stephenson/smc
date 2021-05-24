@@ -35,7 +35,7 @@ public:
 float essmin_fn(int N);
 
 // declare filtering function
-Rcpp::List bootstrap_filter(
+Rcpp::List bootstrap_filter_rcpp(
     Bootstrap_SV_C fk_model, int N, int tmax//, float(*f)(int)
 );
 

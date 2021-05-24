@@ -1,6 +1,7 @@
 detach("package:smc", unload=TRUE)
 rm(list = ls())
 library(smc)
+library(Rcpp)
 
 set.seed(1)
 
@@ -13,11 +14,17 @@ Xt <- generate_SV_data(mu, rho, sigma, tmax)
 Yt <- as.matrix(rnorm(tmax, mean = 0, sd = sqrt(exp(Xt))))
 boot_sv <- Bootstrap_SV$new(data = Yt, mu = -1, sigma = 0.15, rho = 0.95)
 
-N <- 50000
+N <- 5000
 output <- bootstrap_filter(boot_sv, N, tmax)
+
+mod <- Module("particles", PACKAGE="smc")
+Bootstrap_SV_C <- mod$Bootstrap_SV_C
+boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
+output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 par(mfrow = c(1,2))
 plot(Xt, type = "l")
 lines(output$mx, col = "red")
-plot(1:500, output$ess, type = "l")
-rm(output)
+lines(output2$mx, col="green")
+plot(1:tmax, output$ess, type = "l")
+# rm(output)

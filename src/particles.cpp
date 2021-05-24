@@ -71,7 +71,7 @@ float essmin_fn(int N) {
 }
 
 
-List bootstrap_filter(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
+List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
   //float essmin = (*f)(N);
   float essmin = essmin_fn(N);
   
@@ -157,7 +157,7 @@ RCPP_MODULE(particles) {
   .method("logG", &Bootstrap_SV_C::logG)
   ;
   
-  function("bootstrap_filter_rcpp", &bootstrap_filter);
+  function("bootstrap_filter_rcpp", &bootstrap_filter_rcpp);
 }
 
 // You can include R code blocks in C++ files processed with sourceCpp
@@ -166,19 +166,19 @@ RCPP_MODULE(particles) {
 //
 
 /*** R
-set.seed(1)
-
-tmax <- 100
-mu <- -1
-rho <- 0.95
-sigma <- 0.15
-
-N <- 1000
-
-Xt <- generate_SV_data(mu, rho, sigma, tmax)
-Yt <- as.matrix(rnorm(tmax, mean = 0, sd = sqrt(exp(Xt))))
-
-boot_sv <- new(Bootstrap_SV_C, Yt, mu, sigma, rho)
-
-output <- bootstrap_filter_rcpp(boot_sv, N, tmax)
+# set.seed(1)
+# 
+# tmax <- 100
+# mu <- -1
+# rho <- 0.95
+# sigma <- 0.15
+# 
+# N <- 1000
+# 
+# Xt <- generate_SV_data(mu, rho, sigma, tmax)
+# Yt <- as.matrix(rnorm(tmax, mean = 0, sd = sqrt(exp(Xt))))
+# 
+# boot_sv <- new(Bootstrap_SV_C, Yt, mu, sigma, rho)
+# 
+# output <- bootstrap_filter_rcpp(boot_sv, N, tmax)
 */
