@@ -31,3 +31,8 @@ RCPP_MODULE(test) {
   
   function("test_function", &test_function);
 }
+
+/*** R
+tc <- new(TestClass, 4.0)
+test_function(tc)
+*/
