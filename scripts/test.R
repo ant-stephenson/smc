@@ -27,4 +27,21 @@ plot(Xt, type = "l")
 lines(output$mx, col = "red")
 lines(output2$mx, col="green")
 plot(1:tmax, output$ess, type = "l")
-# rm(output)
+
+rm(output)
+rm(output2)
+gc()
+
+library(microbenchmark)
+
+run_filter <- function(filter_fn, ...) {
+  out <- filter_fn(...)
+  rm(out)
+  gc()
+  return(NA)
+}
+
+bench_res <- microbenchmark(rv <- run_filter(bootstrap_filter, boot_sv, N, tmax),
+               cv <- run_filter(mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax),
+               times=5L)
+

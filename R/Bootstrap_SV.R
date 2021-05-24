@@ -67,8 +67,8 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
     w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s]))
     W[t, ] <- w[t, ] / sum(w[t, ])
     # update mean and sd output
-    mx[t-1] <- sum(W[t, ] * x[t, ])
-    sdx[t-1] <- sum((x[t, ] - mx[t])^2) / (N-1)
+    mx[t] <- sum(W[t, ] * x[t, ])
+    sdx[t] <- sum((x[t, ] - mx[t])^2) / (N-1)
   }
   return(list(A = A, x = x, hw = hw, w = w, W = W, 
               mx = mx, sd = sd, r = r, ess = ess))
