@@ -40,8 +40,14 @@ run_filter <- function(filter_fn, ...) {
   gc()
   return(NA)
 }
+funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
 
-bench_res <- microbenchmark(rv <- run_filter(bootstrap_filter, boot_sv, N, tmax),
-               cv <- run_filter(mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax),
+bench_res <- microbenchmark(list=setNames(funcs, c("R","Rcpp")),
                times=5L)
+
+print(bench_res, signif=3)
+
+# print into latex table to include in report?
+# library(Hmisc)
+# latex(print(bench_res, signif=3))
 
