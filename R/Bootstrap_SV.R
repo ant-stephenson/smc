@@ -95,6 +95,21 @@ bootstrap_filter <- function(fk_model, N, tmax,
               mx = mx, sdx = sdx, r = r, ess = ess))
 }
 
+bootstrap_onestep <- function(fk_model, N, 
+                             resampling = systematic_resampling,
+                             essmin_fn = function(N) N/2) {
+  # sample N times from the prior of X
+  x <- matrix(fk_model$sample_m0(N), ncol = N, nrow = 1)
+  # initialise weights
+  w <- matrix(exp(fk_model$logG(1, x[1, ])), ncol = N, nrow = 1) # w_t
+  W <- matrix(w[1, ] / sum(w[1, ]), ncol = N, nrow = 1) # W_t
+  if (eff_particle_no(W[t-1, ]) < essmin_fn(N)) A <- matrix(resampling(W), 
+                                                            ncol = N, nrow = 1)
+  else A <- matrix(1:N, ncol = N, nrow = 1)
+  # draw X_t from transition kernel
+  x <- matrix(fk_model$sample_m(x[t-1, A[1, ]]), ncol = N, nrow = 1)
+  return(list(A = A, x = x))
+}
 
 require(methods)
 Bootstrap_SV <- setRefClass("Bootstrap_SV",
