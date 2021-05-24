@@ -3,9 +3,6 @@
 #include "particles.h"
 using namespace Rcpp;
 
-// [[Rcpp::depends(utils]]
-// [[Rcpp::plugins(cpp14)]] 
-
 double eff_particle_no(
     const NumericVector w 
 ) 
@@ -14,7 +11,7 @@ double eff_particle_no(
   return ess;
 }
 
-// // [[Rcpp::export(name = "systematic_resampling_rcpp")]]
+// [[Rcpp::export(name = "systematic_resampling_rcpp")]]
 IntegerVector systematic_resampling(const NumericVector W) {
   int N = W.length();
   NumericVector v = cumsum(W);
@@ -31,8 +28,7 @@ IntegerVector systematic_resampling(const NumericVector W) {
   return A;
 }
 
-// // [[Rcpp::export(name = "Bootstrap_SV_rcpp")]]
-Bootstrap_SV::Bootstrap_SV(NumericVector data, float mu, float sigma, float rho)
+Bootstrap_SV_C::Bootstrap_SV_C(NumericVector data, float mu, float sigma, float rho)
 {
   this->_data = data;
   this->_mu = mu;
@@ -42,27 +38,27 @@ Bootstrap_SV::Bootstrap_SV(NumericVector data, float mu, float sigma, float rho)
   this->sigma0 = sigma / sqrt(1.0 - rho * rho);
 }
 
-NumericVector Bootstrap_SV::sample_m0(int N)
+NumericVector Bootstrap_SV_C::sample_m0(int N)
 {
   return rnorm(N, this->_mu, this->sigma0);
 }
 
-NumericVector Bootstrap_SV::sample_m(NumericVector xp)
+NumericVector Bootstrap_SV_C::sample_m(NumericVector xp)
 {
   int N = xp.length();
   NumericVector sample(N);
-  
+
   for (int i=0; i<N; i++) {
     sample[i] = R::rnorm(this->_mu + this->_rho * (xp[i] - this->_mu), this->_sigma);
   }
   return sample;
 }
 
-NumericVector Bootstrap_SV::logG(int t, NumericVector x)
+NumericVector Bootstrap_SV_C::logG(int t, NumericVector x)
 {
   int N = x.length();
   NumericVector logg(N);
-  
+
   for (int i=0; i<N; i++) {
     logg[i] = R::dnorm(this->_data[t], 0.0, sqrt(exp(x[i])), true);
   }
@@ -74,9 +70,8 @@ float essmin_fn(int N) {
   return (float)N/2.0;
 }
 
-
-// // [[Rcpp::export(name = "bootstrap_filter_rcpp")]]
-List bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
+/// [[Rcpp::export(name = "bootstrap_filter_rcpp")]]
+List bootstrap_filter(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
   //float essmin = (*f)(N);
   float essmin = essmin_fn(N);
   
@@ -133,18 +128,47 @@ List bootstrap_filter(Bootstrap_SV fk_model, int N, int tmax) {//, float(*f)(int
     mx(t-1) = sum(W(t, _) * x(t, _));
     sdx(t-1) = sqrt(sum(pow(x(t, _) - mx(t), 2.0) / (float)(N-1)));
   }
- 
-  // FilterOutput output(A, x, hw, W, mx, sdx, r, ess);
+  
   List output = List::create(_["A"] = A, _["x"] = x, _["hw"] = hw, _["W"] = W, 
                              _["mx"] = mx, _["sdx"] = sdx, _["r"] = r, _["ess"] = ess);
   
   return output;
 }
 
-// [[Rcpp::export(name = "run_bootstrap_filter")]]
-List run_bootstrap_filter(NumericVector data, float mu, float sigma, float rho, int N, int tmax) {
-  Bootstrap_SV fk_model(data, mu, sigma, rho);
-  return bootstrap_filter(fk_model, N, tmax);
+// /// [[Rcpp::export]]
+// Rcpp::XPtr<Bootstrap_SV_C> getBootstrap_SV(Rcpp::NumericVector data, float mu, float sigma, float rho) {
+//   Rcpp::XPtr<Bootstrap_SV_C> ptr(new Bootstrap_SV_C(data, mu, sigma, rho), true);
+//   return ptr;
+// }
+// 
+// 
+// 
+// // [[Rcpp::export(name = "run_bootstrap_filter")]]
+// List run_bootstrap_filter(NumericVector data, float mu, float sigma, float rho, int N, int tmax) {
+//   Bootstrap_SV_S fk_model(data, mu, sigma, rho);
+//   return bootstrap_filter(fk_model, N, tmax);
+// }
+
+RCPP_EXPOSED_CLASS(Bootstrap_SV_C);
+RCPP_MODULE(particles) {
+  
+  Rcpp::class_<Bootstrap_SV_C>("Bootstrap_SV_C")
+  
+  .constructor<Rcpp::NumericVector, float, float, float>()
+  
+  .field("_data", &Bootstrap_SV_C::_data)
+  .field("tmax", &Bootstrap_SV_C::tmax)
+  .field("_mu", &Bootstrap_SV_C::_mu)
+  .field("_sigma", &Bootstrap_SV_C::_sigma)
+  .field("_rho", &Bootstrap_SV_C::_rho)
+  .field("sigma0", &Bootstrap_SV_C::sigma0)
+  
+  .method("sample_m0", &Bootstrap_SV_C::sample_m0)
+  .method("sample_m", &Bootstrap_SV_C::sample_m)
+  .method("logG", &Bootstrap_SV_C::logG)
+  ;
+  
+  function("bootstrap_filter", &bootstrap_filter);
 }
 
 // You can include R code blocks in C++ files processed with sourceCpp
