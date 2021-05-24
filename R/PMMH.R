@@ -13,7 +13,7 @@ full_lik <- function(fk_model, x, A, theta, N, tn) {
   return(lik)
 }
 
-# One step particle marginal Metropolis hastings
+# One step particle marginal Metropolis-Hastings
 pmmh_onestep <- function(fk_model, theta, x, A, sd_prop, sd_prior, ...) {
   # get N and T
   dims <- dim(x)
@@ -28,7 +28,7 @@ pmmh_onestep <- function(fk_model, theta, x, A, sd_prop, sd_prior, ...) {
   A_prop <- bs_result$A
   # compute acceptance probability
   r_num <- dnorm(x = theta_prop, mean = 0, sd = sd_prior) *
-    full_lik(fk_model, x_prop, A, theta_prop, N, tn)
+    full_lik(fk_model, x_prop, A_prop, theta_prop, N, tn)
   r_denom <- dnorm(x = theta, mean = 0, sd = sd_prior) *
     full_lik(fk_model, x, A, theta, N, tn)
   r_pmmh <- r_num / r_denom
@@ -52,10 +52,10 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, sd_prior, sd_prop,
   xs[1, , ] <- t(matrix(unlist(lapply(sv_models, function(x) x$sample_m0(N = Nx))), 
                         ncol = Nx))
   # initialise A
-  As <- array(NA, dim = c(tmax+1, Nt, Nx))
+  As <- array(NA, dim = c(tmax+1, tmax, Nx))
   # initialise weights
-  wm <- matrix(NA, nrow = Nx, ncol = Nt) # w^m
-  Wm <- matrix(NA, nrow = Nx, ncol = Nt) # W^m
+  wm <- matrix(NA, nrow = tmax+1, ncol = Nt) # w^m
+  Wm <- matrix(NA, nrow = tmax+1, ncol = Nt) # W^m
   wm[1, ] <- unlist(lapply(1:Nt, 
                            function(s) sum(exp(sv_models[[s]]$logG(1, xs[1, s, ]))) / Nx))
   Wm[1, ] <- wm[1, ] / sum(wm[1, ])
