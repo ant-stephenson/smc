@@ -96,7 +96,7 @@ List bootstrap_filter(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(i
   W(0, _) = w / sum(w);
   
   // initialise ancestor variables
-  IntegerMatrix A(N, tmax);
+  IntegerMatrix A(tmax, N);
   
   // resampling times
   IntegerVector r;
@@ -109,7 +109,10 @@ List bootstrap_filter(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(i
       hw = 0*hw + 1;
     }
     else {
-      A(t-1, _) = NumericVector::import(1, N+1);
+      for (int i=0; i<N; i++) {
+        A(t-1, i) = i + 1;
+      }
+      // A(t-1, _) = NumericVector::import(1, N+1);
       hw = w;
     }
     IntegerMatrix::Row s = A(t-1, _);
@@ -177,5 +180,19 @@ RCPP_MODULE(particles) {
 //
 
 /*** R
-#
+set.seed(1)
+
+tmax <- 100
+mu <- -1
+rho <- 0.95
+sigma <- 0.15
+
+N <- 100
+
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax, mean = 0, sd = sqrt(exp(Xt))))
+
+boot_sv <- new(Bootstrap_SV_C, Yt, mu, sigma, rho)
+
+output <- bootstrap_filter(boot_sv, N, tmax)
 */
