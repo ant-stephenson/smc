@@ -122,8 +122,9 @@ Bootstrap_SV <- setRefClass("Bootstrap_SV",
                                        mean = .self$mu + .self$rho * (xp - .self$mu), 
                                        sd = .self$sigma)
                                },
-                               logG = function(t, x) {
-                                 dnorm(.self$data[t], mean = 0, 
+                               logG = function(t, x, mean = NULL) {
+                                 if(is.null(mean)) mean <- 0
+                                 dnorm(.self$data[t], mean = mean, 
                                        sd = sqrt(exp(x)), log = TRUE)
                                }
                              ))
