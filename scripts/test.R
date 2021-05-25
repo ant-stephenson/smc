@@ -12,7 +12,7 @@ set.seed(1)
 # print(test_Xt)
 # print(Xt)
 
-tmax <- 100
+tmax <- 1000
 mu <- -1
 rho <- 0.95
 sigma <- 0.15
@@ -22,7 +22,7 @@ Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
 
 boot_sv <- Bootstrap_SV$new(data = Yt, mu = -1, sigma = 0.15, rho = 0.95)
 
-N <- 10
+N <- 1000
 output <- bootstrap_filter(boot_sv, N, tmax)
 
 par(mfrow = c(2, 1))
@@ -42,7 +42,7 @@ Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
 Nx <- 100
 Nt <- 1000
 sd_prior <- 0.2
-mu_prior <- 0
+mu_prior <- -1
 
 smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
                            mu_prior = -1, sd_prior = 1, sd_prop = 1)
