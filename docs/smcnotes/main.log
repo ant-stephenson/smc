@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.11.6)  19 MAY 2021 18:33
+This is pdfTeX, Version 3.14159265-2.6-1.40.20 (TeX Live 2019/Debian) (preloaded format=pdflatex 2020.11.6)  20 MAY 2021 18:22
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -782,22 +782,22 @@ File: l3backend-pdfmode.def 2020-02-03 L3 backend support: PDF mode
 (./main.aux)
 \openout1 = `main.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
-LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 65.
-LaTeX Font Info:    ... okay on input line 65.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 69.
+LaTeX Font Info:    ... okay on input line 69.
  (/usr/share/texlive/texmf-dist/tex/context/base/mkii/supp-pdf.mkii
 [Loading MPS to PDF converter (version 2006.09.02).]
 \scratchcounter=\count429
@@ -864,7 +864,7 @@ e
 
 \c@lstlisting=\count435
 \AtBeginShipoutBox=\box70
-Package hyperref Info: Link coloring ON on input line 65.
+Package hyperref Info: Link coloring ON on input line 69.
 (/usr/share/texlive/texmf-dist/tex/latex/hyperref/nameref.sty
 Package: nameref 2019/09/16 v2.46 Cross-referencing by name of section
 
@@ -876,9 +876,9 @@ Package: gettitlestring 2019/12/15 v1.6 Cleanup title references (HO)
 )
 \c@section@level=\count436
 )
-LaTeX Info: Redefining \ref on input line 65.
-LaTeX Info: Redefining \pageref on input line 65.
-LaTeX Info: Redefining \nameref on input line 65.
+LaTeX Info: Redefining \ref on input line 69.
+LaTeX Info: Redefining \pageref on input line 69.
+LaTeX Info: Redefining \nameref on input line 69.
 
 (./main.out) (./main.out)
 \@outlinefile=\write4
@@ -913,14 +913,14 @@ Package biblatex Info: Automatic encoding selection.
 Package biblatex Info: Trying to load bibliographic data...
 Package biblatex Info: ... file 'main.bbl' found.
  (./main.bbl)
-Package biblatex Info: Reference section=0 on input line 65.
-Package biblatex Info: Reference segment=0 on input line 65.
-LaTeX Font Info:    Trying to load font information for U+msa on input line 71.
+Package biblatex Info: Reference section=0 on input line 69.
+Package biblatex Info: Reference segment=0 on input line 69.
+LaTeX Font Info:    Trying to load font information for U+msa on input line 75.
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsa.fd
 File: umsa.fd 2013/01/14 v3.01 AMS symbols A
 )
-LaTeX Font Info:    Trying to load font information for U+msb on input line 71.
+LaTeX Font Info:    Trying to load font information for U+msb on input line 75.
 
 
 (/usr/share/texlive/texmf-dist/tex/latex/amsfonts/umsb.fd
@@ -945,31 +945,52 @@ File: omscmr.fd 2019/12/16 v2.5j Standard LaTeX font definitions
 LaTeX Font Info:    Font shape `OMS/cmr/m/n' in size <10.95> not available
 (Font)              Font shape `OMS/cmsy/m/n' tried instead on input line 160.
  [4] [5]
-[6])
+[6]) (./mlesmc.tex
+Overfull \hbox (5.87332pt too wide) in paragraph at lines 1--1
+[]\OT1/cmr/bx/n/14.4 Bayesian es-ti-ma-tion of state-space mod-els and par-ti-c
+le MCMC 
+ []
 
-LaTeX Warning: Empty bibliography on input line 75.
 
-Package atveryend Info: Empty hook `BeforeClearDocument' on input line 79.
+Overfull \hbox (17.05199pt too wide) in paragraph at lines 31--32
+[]\OT1/cmr/m/n/10.95 Associate our para-met-ric state-space model with a para-m
+et-ric FK model, with ker-nels $\OML/cmm/m/it/10.95 M[]\OT1/cmr/m/n/10.95 (\OML
+/cmm/m/it/10.95 x[]; dx[]\OT1/cmr/m/n/10.95 )$
+ []
+
 [7]
-Package atveryend Info: Empty hook `AfterLastShipout' on input line 79.
+Overfull \hbox (15.90686pt too wide) in paragraph at lines 41--42
+[]\OT1/cmr/m/n/10.95 To spec-ify this para-met-ric FK model (with the boot-stra
+p for-mal-ism), $\OML/cmm/m/it/10.95 M[]\OT1/cmr/m/n/10.95 (\OML/cmm/m/it/10.95
+ x[]; dx[]\OT1/cmr/m/n/10.95 ) = \OML/cmm/m/it/10.95 P[]\OT1/cmr/m/n/10.95 (\OM
+L/cmm/m/it/10.95 x[]; dx[]\OT1/cmr/m/n/10.95 )$
+ []
+
+[8] [9] [10])
+
+LaTeX Warning: Empty bibliography on input line 81.
+
+Package atveryend Info: Empty hook `BeforeClearDocument' on input line 85.
+[11]
+Package atveryend Info: Empty hook `AfterLastShipout' on input line 85.
  (./main.aux)
-Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 79.
-Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 79.
+Package atveryend Info: Executing hook `AtVeryEndDocument' on input line 85.
+Package atveryend Info: Executing hook `AtEndAfterFileList' on input line 85.
 Package rerunfilecheck Info: File `main.out' has not changed.
-(rerunfilecheck)             Checksum: 75F638B5A58D433F3199BD2BD9004BD5;620.
+(rerunfilecheck)             Checksum: F90655C854F7EB034A9F92A23DF7512B;983.
 Package logreq Info: Writing requests to 'main.run.xml'.
 \openout1 = `main.run.xml'.
 
-Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 79.
+Package atveryend Info: Empty hook `AtVeryVeryEnd' on input line 85.
  ) 
 Here is how much of TeX's memory you used:
- 19731 strings out of 483183
- 326498 string characters out of 5966292
- 1005995 words of memory out of 5000000
- 34410 multiletter control sequences out of 15000+600000
+ 19767 strings out of 483183
+ 326878 string characters out of 5966292
+ 1010329 words of memory out of 5000000
+ 34425 multiletter control sequences out of 15000+600000
  543812 words of font info for 65 fonts, out of 8000000 for 9000
  14 hyphenation exceptions out of 8191
- 41i,15n,45p,928b,743s stack positions out of 5000i,500n,10000p,200000b,80000s
+ 41i,16n,45p,928b,743s stack positions out of 5000i,500n,10000p,200000b,80000s
  </home/hg20831/.texlive2019/texmf-var/fonts/pk/ljfour/jknappen/ec/tcrm1095.6
 00pk></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx10.pfb><
 /usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmbx12.pfb></usr/s
@@ -987,10 +1008,10 @@ r8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb
 share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy8.pfb></usr/share/t
 exlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmti10.pfb></usr/share/texlive
 /texmf-dist/fonts/type1/public/amsfonts/symbols/msbm10.pfb>
-Output written on main.pdf (7 pages, 211679 bytes).
+Output written on main.pdf (11 pages, 235523 bytes).
 PDF statistics:
- 189 PDF objects out of 1000 (max. 8388607)
- 160 compressed objects within 2 object streams
- 40 named destinations out of 1000 (max. 500000)
- 73 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 237 PDF objects out of 1000 (max. 8388607)
+ 203 compressed objects within 3 object streams
+ 58 named destinations out of 1000 (max. 500000)
+ 105 words of extra memory for PDF output out of 10000 (max. 10000000)
 
