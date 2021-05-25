@@ -61,6 +61,19 @@ Nx <- 100
 Nt <- 1000
 sd_prior <- 0.2
 mu_prior <- -1
+mu_prior <- -0.7
+sd_prop <- 1.5
 
 smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
                            mu_prior = -0.7, sd_prior = 0.2, sd_prop = 1)
+                           mu_prior = mu_prior, sd_prior = sd_prior, sd_prop = sd_prop)
+
+## Get mean and sd of theta from last iteration and then run a bootstrap filter
+
+mut = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1, ])/sum(smc_results$Wm[tmax+1,])
+sd_t = sqrt(sum(smc_results$Wm[tmax+1,] * (smc_results$thetas[tmax+1, ] - mut)^2)/sum(smc_results$Wm[tmax+1,]))
+
+# smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
+#                            mu_prior = mut, sd_prior = 0.2, sd_prop = sd_t)
+boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, mut, 0.15, 0.95)
+output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)

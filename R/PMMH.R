@@ -96,6 +96,13 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
         x <- matrix(xs[1:(t-1), s, ], nrow = t-1)
         pmmh_results <- pmmh_onestep(sv_models[[s]], thetas[t-1, s], x, A,
                                      mu_prior, sd_prior, sd_prop, ...)
+        
+        # use population of thetas to improve sampling
+        mut <- sum(Wm[t-1,] * thetas[t-1, ])/sum(Wm[t-1,])
+        sd_t <- sqrt(sum(Wm[t-1,] * (thetas[t-1,]-mut)^2)/sum(Wm[t-1,]))
+        
+        pmmh_results <- pmmh_onestep(sv_models[[s]], thetas[t-1, s, ], x, A,
+                                     mut, sd_prior, sd_t, ...)
         thetas[t, s] <- pmmh_results$theta
         xs[1:(t-1), s, ] <- pmmh_results$x
         if (!is.null(pmmh_results$A)) As[1:(t-2), s, ] <- pmmh_results$A
