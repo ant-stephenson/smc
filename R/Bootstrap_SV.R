@@ -75,17 +75,15 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
     if (ess[t-1] < essmin) {
       r <- c(r, t-1)
       A[t-1, ] <- resampling(W[t-1, ])
-      hw[t-1, ] <- rep(1, N)
+      hw[t-1, ] <- rep(0, N)
     } else {
       A[t-1, ] <- 1:N
       hw[t-1, ] <- w[t-1, ]
     }
-    s <- A[t-1, ]
-    
     # draw X_t from transition kernel
-    x[t, ] <- fk_model$sample_m(x[t-1, s])
+    x[t, ] <- fk_model$sample_m(x[t-1, A[t-1, ]])
     # update weights
-    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, s], mean = theta)
+    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, A[t-1, ]], mean = theta)
     W[t, ] <- exp(w[t, ]) / sum(exp(w[t, ]))
     # update mean and sd output
     mx[t] <- sum(W[t, ] * x[t, ])
@@ -103,13 +101,13 @@ bootstrap_onestep <- function(fk_model, N, theta = NULL,
   # initialise weights
   w <- matrix(fk_model$logG(1, x[1, ], mean = theta), ncol = N, nrow = 1) # w_t
   W <- matrix(exp(w[1, ]) / sum(exp(w[1, ])), ncol = N, nrow = 1) # W_t
-  if (eff_particle_no(W[t-1, ]) < essmin_fn(N)) {
+  if (eff_particle_no(W) < essmin_fn(N)) {
     A <- matrix(resampling(W), ncol = N, nrow = 1)
   } else {
     A <- matrix(1:N, ncol = N, nrow = 1)
   }
   # draw X_t from transition kernel
-  x <- matrix(fk_model$sample_m(x[t-1, A[1, ]]), ncol = N, nrow = 1)
+  x <- matrix(fk_model$sample_m(x[, A[1, ]]), ncol = N, nrow = 1)
   return(list(A = A, x = x))
 }
 
