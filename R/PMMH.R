@@ -45,7 +45,7 @@ pmmh_onestep <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop, ...
   #r_denom <- exp(dnorm(x = theta, mean = 0, sd = sd_prior, log = TRUE)) *
   #  full_lik(fk_model, x, A, theta, N, tn)
   #r_pmmh <- r_num / r_denom
-  prior_diff <- ((theta - mu_prior)^2 - (theta - mu_prior)^2) / (2 * sd_prior^2)
+  prior_diff <- ((theta - mu_prior)^2 - (theta_prop - mu_prior)^2) / (2 * sd_prior^2)
   lr_pmmh <- #dnorm(x = theta_prop, mean = mu_prior, sd = sd_prior, log = TRUE) +
     log_lik(fk_model, x_prop, A_prop, theta_prop, N, tn) -
   #  dnorm(x = theta_prop, mean = mu_prior, sd = sd_prior, log = TRUE) -
