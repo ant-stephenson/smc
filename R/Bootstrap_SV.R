@@ -75,7 +75,7 @@ bootstrap_filter <- function(fk_model, N, tmax,
               mx = mx, sdx = sdx, r = r, ess = ess))
 }
 
-bootstrap_onestep <- function(fk_model, N, theta = NULL,
+bootstrap_onestep <- function(fk_model, N,
                              resampling = systematic_resampling,
                              essmin_fn = function(N) N/2) {
   # sample N times from the prior of X
