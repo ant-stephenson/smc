@@ -4,11 +4,12 @@ full_lik <- function(fk_model, x, A, theta, N, tn) {
   if (tn > 1) {
     p1 <- sum(exp(fk_model$logG(1, x[1, ], theta))) / N
     p2 <- sapply(2:tn, 
-                 function(t) sum(exp(fk_model$logG(t, x[t, A[t-1, ]], theta)))) / N
+                 function(t) sum(exp(fk_model$logG(t, x[t, A[t-1, ]], theta))) / N)
     lik <- p1 * prod(p2)
   } else {
     lik <- sum(exp(fk_model$logG(1, x[1, ], theta))) / N
   }
+  return(lik)
 }
 
 # One step particle marginal Metropolis-Hastings
@@ -16,15 +17,14 @@ pmmh_onestep <- function(fk_model, theta, x, A, sd_prop, sd_prior, ...) {
   # get N and T
   dims <- dim(x)
   N <- dims[2]
-  tn <- dims[1] -1
+  tn <- dims[1] - 1
   # update theta with random walk proposal
   theta_prop <- theta + rnorm(1, mean = 0, sd = sd_prop)
   # update X and A with boostrap filter
-  if (tn > 0) bs_result <- bootstrap_filter(fk_model, N, tmax = tn,...)
-  else bs_result <- bootstrap_onestep(fk_model, N, ...)
+  if (tn > 0) bs_result <- bootstrap_filter(fk_model, N, tmax = tn, theta = theta, ...)
+  else bs_result <- bootstrap_onestep(fk_model, N, theta = theta, ...)
   x_prop <- bs_result$x
   A_prop <- bs_result$A
-  # compute acceptance probability
   # compute acceptance probability
   r_num <- dnorm(x = theta_prop, mean = 0, sd = sd_prior) *
     full_lik(fk_model, x_prop, A_prop, theta_prop, N, tn)
@@ -32,7 +32,7 @@ pmmh_onestep <- function(fk_model, theta, x, A, sd_prop, sd_prior, ...) {
     full_lik(fk_model, x, A, theta, N, tn)
   r_pmmh <- r_num / r_denom
   # accept
-  if(runif(1) < r_pmmh) return(list(theta = theta_prop, x = x_prop, A = A_prop))
+  if (runif(1) < r_pmmh) return(list(theta = theta_prop, x = x_prop, A = A_prop))
   # reject
   else return(list(theta = theta, x = x, A = A))
 }
@@ -63,7 +63,7 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
   wm[1, ] <- unlist(lapply(1:Nt,
                            function(s) {
                              sum(exp(sv_models[[s]]$logG(1, xs[1, s, ], 
-                                                         thetas[1,s ]))) / Nx
+                                                         thetas[1, s]))) / Nx
                            }))
   Wm[1, ] <- wm[1, ] / sum(wm[1, ])
   # initialise ESS vector
@@ -76,9 +76,9 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
     if (ess[t-1] < essmin) {
       # move particles through PMMH kernel
       for (s in 1:Nt) {
-        if (t > 2) A <- As[1:(t-2), s, ]
+        if (t > 2) A <- matrix(As[1:(t-2), s, ], nrow = t-2)
         else A <- NULL
-        x <- as.matrix(xs[1:(t-1), s, ])
+        x <- matrix(xs[1:(t-1), s, ], nrow = t-1)
         pmmh_results <- pmmh_onestep(fk_model = sv_models[[s]], 
                                      theta = thetas[t-1, s],
                                      x = x, A = A, sd_prop = sd_prop, 
@@ -111,7 +111,7 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
                                          function(s) {
                                            sum(exp(sv_models[[s]]$logG(
                                              t, xs[t, s, As[t-1, s, ]],
-                                             thetas[t, s])))/ Nx
+                                             thetas[t, s]))) / Nx
                                          }))
     Wm[t, ] <- wm[t, ] / sum(wm[t, ])
   }
