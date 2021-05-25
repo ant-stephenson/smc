@@ -54,7 +54,7 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
   w <- matrix(NA, nrow = (tmax + 1), ncol = N) # w_t
   W <- matrix(NA, nrow = (tmax + 1), ncol = N) # W_t
   hw <- matrix(NA, nrow = tmax, ncol = N) # hat{w}_t
-  w[1, ] <- fk_model$logG(1, x[1, ], mean = theta)
+  w[1, ] <- fk_model$logG(1, x[1, ])
   W[1, ] <- exp(w[1, ]) / sum(exp(w[1, ]))
   
   # initialise mean and sd output
@@ -83,7 +83,7 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
     # draw X_t from transition kernel
     x[t, ] <- fk_model$sample_m(x[t-1, A[t-1, ]])
     # update weights
-    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, A[t-1, ]], mean = theta)
+    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, A[t-1, ]])
     W[t, ] <- exp(w[t, ]) / sum(exp(w[t, ]))
     # update mean and sd output
     mx[t] <- sum(W[t, ] * x[t, ])
@@ -99,7 +99,7 @@ bootstrap_onestep <- function(fk_model, N, theta = NULL,
   # sample N times from the prior of X
   x <- matrix(fk_model$sample_m0(N), ncol = N, nrow = 1)
   # initialise weights
-  w <- matrix(fk_model$logG(1, x[1, ], mean = theta), ncol = N, nrow = 1) # w_t
+  w <- matrix(fk_model$logG(1, x[1, ]), ncol = N, nrow = 1) # w_t
   W <- matrix(exp(w[1, ]) / sum(exp(w[1, ])), ncol = N, nrow = 1) # W_t
   if (eff_particle_no(W) < essmin_fn(N)) {
     A <- matrix(resampling(W), ncol = N, nrow = 1)
@@ -137,9 +137,8 @@ Bootstrap_SV <- setRefClass("Bootstrap_SV",
                                        mean = .self$mu + .self$rho * (xp - .self$mu), 
                                        sd = .self$sigma)
                                },
-                               logG = function(t, x, mean = NULL) {
-                                 if(is.null(mean)) mean <- 0
-                                 dnorm(.self$data[t], mean = mean, 
+                               logG = function(t, x) {
+                                 dnorm(.self$data[t], mean = 0, 
                                        sd = sqrt(exp(x)), log = TRUE)
                                }
                              ))
