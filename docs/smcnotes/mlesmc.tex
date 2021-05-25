@@ -1,0 +1,171 @@
+\section{Bayesian estimation of state-space models and particle MCMC}
+
+We consider the problem of estiamting the parameter $\theta$ of a state-space model. We view $\theta$ as the realisation of the random variable $\Theta$ with prior distribution $\nu(d\theta)$ and wish to compute the (typically intractable) posterior distribution, i.e. the distribution of $\Theta$ conditional on observed data $y_{0:T}$.
+
+\subsection{Pseudo-marginal samplers}
+
+Consider a Bayesian model with prior distribution $\nu(d\theta)$ and likelihood function $p^\theta(y)$. Furthermore, assume the likelihood is intractable -- this prevents us from deriving a MH sampler that would leave invariant the posterior distribution
+
+\beq
+  \PP\cond{d\theta}{Y=y} = \nu (d\theta) \frac{p^\theta(y)}{p(y)}.
+\eeq
+
+A \textit{pseudo-marginal MCMC} sampler can be described (informally) as a Metropolis-Hastings sampler where the intractable likelihood is replaced by an unbiased estimate. That is, we assume we know how to sample an auxiliary variable $Z \sim \M^\theta(dz)$ and how to compute a non-negative function $L(\theta, z)$ such That
+
+\beq
+  \Exp{L(\theta, Z)} = \int \M^\theta (dz) L(\theta,z) = p^\theta (y),
+\eeq
+
+for any $\theta \in \Theta$. Then, given the current pair $(\Theta, Z)$ we generate a new pair $(\tilde{\Theta}, \tilde{Z})$ and use the ratio
+
+\beq
+  r_{\mathrm{PM}} (\theta, z, \tilde\theta, \tilde{z}) = \frac{\nu(\tilde\theta)L(\tilde\theta, \tilde{z}) \tilde{m}\cond{\theta}{\tilde\theta}}{\nu(\theta) L(\theta, z) \tilde{m}\cond{\tilde\theta}{\theta}}
+\eeq
+
+to decide on the acceptance of the proposed values.
+
+\subsection{PMMH: Particle marginal Metropolis-Hastings}
+
+We have a state-space model parameterised by $\theta \in \Theta$ and we want to sample from its posterior, given data $(y_{0:T})$. We can run a pseudo-marginal sampler, where the intractable likelihood $\pth{T} (y_{0:t})$ of the model is replaced by an unbiased estimate obtained from a particle filter.
+
+Associate our parametric state-space model with a parametric FK model, with kernels $M_t^\theta (x_{t-1}, dx_t)$ and functions $G_t^\theta$ that depend on $\theta$. The FK model must be such that the FK measure $\Q_T^\theta (dx_{0:t})$ matches the posterior distribution of the states, conditional on $\Theta = \theta$:
+
+\begin{align*}
+  \Q_T^\theta (dx_{0:t}) &= \frac{1}{L_T^\Theta} \M_0^\theta (dx_0) \prodd{t}{T} M_t^\theta (x_{t-1}, dx_t) G_0^\theta (x_0) \prodd{t}{T} G_t^\theta (x_{t-1}, x_t) \\
+  &= \frac{1}{p_T^\theta (y_{0:T})} \PP_T^\theta (dx_{0:T}) \prodd[0]{t}{T} \fth{t} \cond{y_t}{x_t} \\
+  &= \PP_T \cond{dx_{0:T}}{\Theta = \theta, Y_{0:T} = y_{0:T}}.
+\end{align*}
+
+In particular,we reuire that $L_T^\Theta = p^\theta (y_{0:T})$ for all $\theta \in \Theta$.
+
+To specify this parametric FK model (with the bootstrap formalism), $M_t^\theta(x_{t-1}, dx_t) = P_t^\theta (x_{t-1}, dx_t)$ so that
+
+\beq
+  G_t^\theta (x_{t-1}, x_t) = \fth{t} \cond{y_t}{x_t}.
+\eeq
+
+for $t \geq 1$.
+
+Since $L_T^\theta = p_T^\theta (y_{0:T})$ we may, for any $\theta \in \Theta$, run an SMC algorithm associated with the considered FK model and compute
+
+\beq
+  L_T^N \left(\theta, X_{0:T}^{1:N}, A_{1:T}^{1:N}\right) = \left( \frac{1}{N} \summ{n}{N} G_0^\theta (X_0^n)\right) \prodd{t}{T} \left(\frac{1}{N} \summ{n}{N} G_t^\theta \left(X_{t-1}^{A_t^n}, X_t^n\right)\right)
+\eeq
+
+as an unbiased estimate of $p_T^\theta (y_{0:t})$.
+
+We refer to pseudo-marginal algorithms based on particle filters as particle marginal Metropolis-Hastings (PMMH).
+
+\begin{algorithm}
+  \KwIn{$\Theta$, $X_{0:T}^{1:N}, A_{1:T}^{1:N}$}
+  \KwOut{}
+  Draw $\tilde{\Theta} \sim \Tilde{M} (\Theta, d\theta)$. \;
+  Run SMC algorithm to generate variables $\left(\tilde{X}_{0:T}^{1:N}, \tilde{A}_{1:T}^{1:N}\right)$ given $\tilde{\Theta}$. \;
+  Draw $U \sim \mathcal{U}\left([0,1]\right)$. \;
+  $v \leftarrow \log r_{\mathrm{PMMH}} \left(\Theta, X_{0:T}^{1:N}, A_{1:T}^{1:N}, \tilde\Theta, \tilde{X}_{0:T}^{1:N}, \tilde{A}_{1:T}^{1:N}\right)$ where
+  \beq
+    r_{\mathrm{PMMH}} \left(\Theta, X_{0:T}^{1:N}, A_{1:T}^{1:N}, \tilde\Theta, \tilde{X}_{0:T}^{1:N}, \tilde{A}_{1:T}^{1:N}\right) \coloneqq \frac{\nu(\tilde\theta) L_T^N \left(\tilde\theta, \tilde{x}_{0:T}^{1:N}, \tilde{a}_{1:T}^{1:N}\right) \tilde{m} \cond{\theta}{\tilde\theta}}{\nu(\theta) L_T^N \left(\theta, x_{0:t}^{1:N}, a_{1:T}^{1:N}\right) \tilde{m} \cond{\tilde\theta}{\theta}}.
+  \eeq
+  \If{$\log U \leq v$}{
+    \Return $\tilde\Theta, \tilde{X}_{0:T}^{1:N}, \tilde{A}_{1:T}^{1:N}$. \;
+  }
+  \Else{\Return $\Theta, X_{0:T}^{1:N}, A_{1:T}^{1:N}$. \;}
+  \caption{One-step PMMH.}
+  \label{alg:pmmh}
+\end{algorithm}
+
+\subsection{SMC2 for sequential inference in state-space models}
+
+We want to implement the IBIS (iterative Bayesian importance sampling) algorithm where $\gamma_t(\theta) = \pth{t}(y\zt)$ is intractable. We consider a pseudo-marginal version of the algorithm, where $\pth{t}$ is estimated unbiasedly by a particle filter run until time $t$. The algorithm carries forward $N_\theta$ parameter values $\Theta_t^1, \dots, \Theta_t^{N_\theta}$ and $N_\theta$ associated particle filters, which provide unbiased estimates of $\pth{t}(y\zt)$ for $\theta = \Theta_t^m$, $m=1, \dots, N_\theta$.
+
+The particle filters are guided filters of size $N_x$ which generate up to time $t$ variables $Z_t^m \coloneqq \left(X\zt^{m, 1:N_x}, A\ot^{m, 1:N_x}\right)$ and the corresponding likelihood estimate of the form
+
+\beq
+  L_t^{N_x}\left(\Theta_t^m, X\zt^{m, 1:N_x}, A\ot^{m, 1:N_x}\right) = \left(\frac{1}{N} \summ{N}{N_x} G_0^{\Theta_t^m} \left(X_0^{m,n}\right)\right) \prodd{s}{t} \left(\frac{1}{N} \summ{n}{N_x} G_s^{\Theta_t^m} \left(X_{t-1}^{m,A_t^n}, X_t^{m,n}\right)\right).
+\eeq
+
+PMCMC algorithms leave invariant the extended distribution
+
+\begin{equation}
+  \pi_t\left(d\theta, dx\zt^{1:N_x}, a\ot^{1:N_x}\right) = \frac{1}{p_t(y\zt)} \nu(d\theta) \psi_t^\theta \left(dx\zt\onx, a\ot\onx\right) L_t^{N_x} \left(\theta, x\zt\onx, a\ot\onx\right) \label{eq:extdist}
+\end{equation}
+
+where $\psi_t^\theta(\cdot)$ is the distribution of the random variables generated by a particle filter associated with parameter $\theta$. This distribution admits the true posterior $\PP_t \cond{d\theta}{y\zt}$ as a marginal.
+
+We can define the $\smcs$ algorithm as an SMC sampler that targets the sequence of $\pi_t$'s. Note successive distributions $\pi_t$ do not have the same support: to perform an importance sampling step from $\pi_{t-1}$ to $\pi_t$ we first extend the space by simulating $\left(X_t^{1:N}, A_t^{1:N}\right)$. Let $\psi_t^\theta \cond{dx_t\onx, a_t\onx}{x_{0:t-1}\onx, a_{1:t-1}\onx}$ denote the distribution of the variables generated at time $t$, conditional on the previous steps:
+
+\beq
+  \psi_t^\theta \cond{dx_t\onx, a_t\onx}{x_{0:t-1}\onx, a_{1:t-1}\onx} = \prodd{n}{N_x} W_{t-1}^{a_t^n} M_t^\theta \left(x_{t-1}^{a_t^n}, dx_t^n \right),
+\eeq
+
+where
+
+\beq
+  W_{t-1}^n = \frac{G_{t-1}^\theta \left(x_{t-2}^{a_{t-1}^n}, x_{t-1}^n\right)}{\summ{m}{M} G_{t-1}^\theta \left(x_{t-2}^{a_{t-1}^m}, x_{t-1}^m \right)}.
+\eeq
+
+Then define the importance sampling weight function:
+
+\begin{equation}
+  \frac{\pi_t\left(d\theta, dx\zt\onx, a\ot\onx\right)}{\pi_{t-1} \left(d\theta, dx_{0:t-1}\onx, a_{1:t-1}\onx\right) \psi_t^\theta \cond{dx_t\onx, a_t\onx}{x_{0:t-1}\onx, a_{1:t-1}\onx}} \propto \frac{1}{N} \summ{n}{N_x} G_t^\theta \left(x_{t-1}^{a_t^n}, x_t^n\right), \label{eq:isw}
+\end{equation}
+
+where the normalising constant is $p_t\cond{y_t}{y_{0:t-1}}$.
+
+Defining the $\smcs$ sampler:
+
+\begin{itemize}
+  \item Initialise the algorithm by sampling $N_\theta$ particles from the prior $\nu (d\theta)$. For each particle $\Theta_0^m$, perform iteration 0 of a particle filter to generate variables $X_0^{m,1:N_x}$ and obtain an unbiased estimate of $p_0^\theta(y_0)$ for $\theta = \Theta_0^1, \dots, \Theta_0^{N_\theta}$.
+  \item At time $t \geq 1$, perform iteration $t$ of the $N_\theta$ particle filters and reweight the particles according to \refeqq{eq:isw}.
+  \item If the ESS is too low, resample the particles and move them according to a kenerl $K_t$ that leaves invariant the current target distribution (this must be a PMCMC kernel such as PMMH or Particle Gibbs).
+\end{itemize}
+
+\begin{algorithm}[ht]
+  \DontPrintSemicolon
+  \KwIn{
+    \begin{itemize}
+      \item Number of particles $N_x$ and $N_\theta$.
+      \item A parametric family of state-space mdoels with parameter $\theta \in \Theta$.
+      \item A prior distribution $\nu(d\theta)$ for $\Theta$.
+      \item A ($\theta$-indexed) class of particle filters which, for a given $\theta$ and when run until time $t$, provide an unbiased estimate of the likelihood $p_t\theta(y_{0:t})$.
+      \item A sequence of PMCMC kernels $K_t$ that leaves invariant distribution \refeqq{eq:extdist}.
+      \item A choice of resampling scheme and a threshold $\essmin$.
+    \end{itemize}
+  }
+  \KwOut{}
+  All operations referring to $m$ must be performed for $m = 1, \dots, N_\theta$. \;
+  Draw $\Theta_0^m \sim \nu(d\theta)$. \;
+  Draw $X_0^{m, 1:N_x} \sim \psi_0^{\Theta_0^m}\left(dx_0^{1:N_x}\right)$.
+  $w_0^m \leftarrow \summ{n}{N_x} G_0^{\Theta_0^m} \left(X_0^{m,n}\right) / N$ .
+  $W_0^m \leftarrow w_0^m / \summ{m}{N_\theta} w_0^m$. \;
+  \For{$t=1, \dots, T$}{
+  \If{$\ess\left(W_{t-1}^{1:N_\theta}\right) < \essmin$}{
+    Move the particles through PMCMC kernel $K_t$: \;
+    $\left(\Theta_t^m, \bar{X}_{0:t-1}^{m, 1:N_x}, \bar{A}_{1:t-1}^{1:N_x}\right) \sim K_t \left(\left(\Theta_{t-1}^m, X_{0:t-1}^{m, 1:N_x}, A_{1:t-1}^{m, 1:N_x}\right), d\left(\theta, x_{0:t-1}^{1:N_x}, a_{1:t-1}^{1:N_x}\right)\right)$. \;
+    $\left(X_{0:t-1}^{1:N_x}, A_{1:t-1}^{1:N_x}\right) \leftarrow \left(\bar{X}_{0:t-1}^{1:N_x}, \bar{A}_{1:t-1}^{1:N_x}\right)$. \;
+    $w_{t-1}^m \leftarrow 1$. \;
+  }
+    \Else{
+      $\Theta_t^m \leftarrow \Theta_{t-1}^m$. \;
+    }
+    $\left(X_t^{m, 1:N_x}, A_t^{m,1:N}\right) \sim \psi_t^{\Theta_t^m} \cond{dx_t\onx, a_t\onx}{x_{0:t-1}\onx, a_{1:t-1}\onx}$. \;
+    $w_t \leftarrow w_{t-1}^m \summ{n}{N_x} G_t^{\Theta_t^m} \left(X_{t-1}^{m,A_t^{m,n}}, X_t^{m,n}\right) / N$. \;
+    $W_t^m \leftarrow w_t^m / \summ{l}{N_\theta} w_t^l$. \;
+  }
+  \caption{$\smcs$ algorithm.}
+  \label{alg:smcs}
+\end{algorithm}
+
+Choosing a PMMH kernel means there is no need to store the complete history of the $N_\theta$ particle filters: it is sufficient to store only the variables generated at the previous iteration $\left(X_t^{m,1:N_x}, A_t^{m,1:N_x}\right)$ and the current likelihood estimates, reducing the memory cost to $\bigO{N\theta N_x}$.
+
+Increasing $N_x$ increases the CPU cost but may also improve performance. Generally, take $N_x = \bigO{t}$ to ensure that, if implemented at time $t$, the chosen PMMH kernel mixes sufficiently well. A basic recipe (for when to increase $N_x$ over the course of an $\smcs$ algorithm) is to monitor the acceptance rate of the PMMH kernels. When the acceptance rate is too low, say below 10\%, double $N_x$.
+
+Let $N_x$ denote the current number of $x$-particles, and $\tilde{N}_x$ the value we wish to change to. Two better options for increasing $N_x$:
+
+\begin{enumerate}
+  \item  For each $m=1, \dots, N_\theta$, generate a new particle filter of size $\tilde{N}_x$. Then exchange ``old'' particle filters (of size $N_x$) with the new ones via an importance sampling step, with weights equal to the ratio of the new likelihood estimates and the old components:
+  \beq
+    \frac{L_t^{\tilde{N}_x}\left(\theta, \tilde{x}_{0:t}^{1:\tilde{N}_x}\right), \tilde{a}_{1:t}^{1:\tilde{N}_x}}{L_t^{N_x}\left(\theta, x_{0:t}^{1:N_x}, a_{1:t}^{1:N_x}\right)}.
+  \eeq
+  \item Use CSMC kernel (not discussed here).
+\end{enumerate}

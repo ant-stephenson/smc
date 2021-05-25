@@ -20,30 +20,33 @@ systematic_resampling <- function(W) {
   return(A)
 }
 
-
-bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
+bootstrap_filter <- function(fk_model, N, tmax,
+                             resampling = systematic_resampling,
+                             essmin_fn = function(N) N/2) {
   # compute threshold
   essmin <- essmin_fn(N)
   # initialise simulated values of X
-  x <- matrix(NA, ncol = N, nrow = (tmax + 1))
+  x <- matrix(NA, nrow = (tmax + 1), ncol = N)
   # sample N times from the prior
   x[1, ] <- fk_model$sample_m0(N)
-  
-  # initialise mean and sd output
-  mx <- c()
-  sdx <- c()
   # initialise vector of ess
   ess <- c()
   
   # initialise weights
-  w <- matrix(NA, ncol = N, nrow = (tmax + 1)) # w_t
-  W <- matrix(NA, ncol = N, nrow = (tmax + 1)) # W_t
-  hw <- matrix(NA, ncol = N, nrow = tmax) # hat{w}_t
-  w[1, ] <- exp(fk_model$logG(1, x[1, ]))
-  W[1, ] <- w[1, ] / sum(w[1, ])
+  w <- matrix(NA, nrow = (tmax + 1), ncol = N) # w_t
+  W <- matrix(NA, nrow = (tmax + 1), ncol = N) # W_t
+  hw <- matrix(NA, nrow = tmax, ncol = N) # hat{w}_t
+  w[1, ] <- fk_model$logG(1, x[1, ])
+  W[1, ] <- exp(w[1, ]) / sum(exp(w[1, ]))
+  
+  # initialise mean and sd output
+  mx <- c()
+  sdx <- c()
+  mx[1] <- sum(W[1, ] * x[1, ])
+  sdx[1] <- sum((x[1, ] - mx[1])^2) / (N-1)
   
   # initialise ancestor variables
-  A <- matrix(NA, ncol = N, nrow = tmax)
+  A <- matrix(NA, nrow = tmax, ncol = N)
   # resampling times
   r <- c()
   
@@ -53,27 +56,42 @@ bootstrap_filter <- function(fk_model, N, tmax, essmin_fn = function(N) N/2) {
     # resampling step
     if (ess[t-1] < essmin) {
       r <- c(r, t-1)
-      A[t-1, ] <- systematic_resampling(W[t-1, ])
-      hw[t-1, ] <- rep(1, N)
+      A[t-1, ] <- resampling(W[t-1, ])
+      hw[t-1, ] <- rep(0, N)
     } else {
       A[t-1, ] <- 1:N
       hw[t-1, ] <- w[t-1, ]
     }
-    s <- A[t-1, ]
-    
     # draw X_t from transition kernel
-    x[t, ] <- fk_model$sample_m(x[t-1, s])
+    x[t, ] <- fk_model$sample_m(x[t-1, A[t-1, ]])
     # update weights
-    w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s]))
-    W[t, ] <- w[t, ] / sum(w[t, ])
+    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, A[t-1, ]])
+    W[t, ] <- exp(w[t, ]) / sum(exp(w[t, ]))
     # update mean and sd output
-    mx[t-1] <- sum(W[t, ] * x[t, ])
-    sdx[t-1] <- sum((x[t, ] - mx[t])^2) / (N-1)
+    mx[t] <- sum(W[t, ] * x[t, ])
+    sdx[t] <- sqrt(sum((x[t, ] - mx[t])^2) / (N-1))
   }
   return(list(A = A, x = x, hw = hw, w = w, W = W, 
-              mx = mx, sd = sd, r = r, ess = ess))
+              mx = mx, sdx = sdx, r = r, ess = ess))
 }
 
+bootstrap_onestep <- function(fk_model, N, theta = NULL,
+                             resampling = systematic_resampling,
+                             essmin_fn = function(N) N/2) {
+  # sample N times from the prior of X
+  x <- matrix(fk_model$sample_m0(N), ncol = N, nrow = 1)
+  # initialise weights
+  w <- matrix(fk_model$logG(1, x[1, ]), ncol = N, nrow = 1) # w_t
+  W <- matrix(exp(w[1, ]) / sum(exp(w[1, ])), ncol = N, nrow = 1) # W_t
+  if (eff_particle_no(W) < essmin_fn(N)) {
+    A <- matrix(resampling(W), ncol = N, nrow = 1)
+  } else {
+    A <- matrix(1:N, ncol = N, nrow = 1)
+  }
+  # draw X_t from transition kernel
+  x <- matrix(fk_model$sample_m(x[, A[1, ]]), ncol = N, nrow = 1)
+  return(list(A = A, x = x))
+}
 
 require(methods)
 Bootstrap_SV <- setRefClass("Bootstrap_SV",

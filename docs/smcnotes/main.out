@@ -7,3 +7,7 @@
 \BOOKMARK [2][-]{subsection.3.1}{Multinomial resampling}{section.3}% 7
 \BOOKMARK [2][-]{subsection.3.2}{Systematic resampling}{section.3}% 8
 \BOOKMARK [1][-]{section.4}{The bootstrap filter for state-space models}{}% 9
+\BOOKMARK [1][-]{section.5}{Bayesian estimation of state-space models and particle MCMC}{}% 10
+\BOOKMARK [2][-]{subsection.5.1}{Pseudo-marginal samplers}{section.5}% 11
+\BOOKMARK [2][-]{subsection.5.2}{PMMH: Particle marginal Metropolis-Hastings}{section.5}% 12
+\BOOKMARK [2][-]{subsection.5.3}{SMC2 for sequential inference in state-space models}{section.5}% 13
