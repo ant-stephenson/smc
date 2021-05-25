@@ -44,18 +44,18 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
   # compute threshold
   essmin <- essmin_fn(N)
   # initialise simulated values of X
-  x <- matrix(NA, ncol = N, nrow = (tmax + 1))
+  x <- matrix(NA, nrow = (tmax + 1), ncol = N)
   # sample N times from the prior
   x[1, ] <- fk_model$sample_m0(N)
   # initialise vector of ess
   ess <- c()
   
   # initialise weights
-  w <- matrix(NA, ncol = N, nrow = (tmax + 1)) # w_t
-  W <- matrix(NA, ncol = N, nrow = (tmax + 1)) # W_t
-  hw <- matrix(NA, ncol = N, nrow = tmax) # hat{w}_t
-  w[1, ] <- exp(fk_model$logG(1, x[1, ], mean = theta))
-  W[1, ] <- w[1, ] / sum(w[1, ])
+  w <- matrix(NA, nrow = (tmax + 1), ncol = N) # w_t
+  W <- matrix(NA, nrow = (tmax + 1), ncol = N) # W_t
+  hw <- matrix(NA, nrow = tmax, ncol = N) # hat{w}_t
+  w[1, ] <- fk_model$logG(1, x[1, ], mean = theta)
+  W[1, ] <- exp(w[1, ]) / sum(exp(w[1, ]))
   
   # initialise mean and sd output
   mx <- c()
@@ -64,7 +64,7 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
   sdx[1] <- sum((x[1, ] - mx[1])^2) / (N-1)
   
   # initialise ancestor variables
-  A <- matrix(NA, ncol = N, nrow = tmax)
+  A <- matrix(NA, nrow = tmax, ncol = N)
   # resampling times
   r <- c()
   
@@ -85,8 +85,8 @@ bootstrap_filter <- function(fk_model, N, tmax, theta = NULL,
     # draw X_t from transition kernel
     x[t, ] <- fk_model$sample_m(x[t-1, s])
     # update weights
-    w[t, ] <- hw[t-1, ] * exp(fk_model$logG(t, x[t, s], mean = theta))
-    W[t, ] <- w[t, ] / sum(w[t, ])
+    w[t, ] <- hw[t-1, ] + fk_model$logG(t, x[t, s], mean = theta)
+    W[t, ] <- exp(w[t, ]) / sum(exp(w[t, ]))
     # update mean and sd output
     mx[t] <- sum(W[t, ] * x[t, ])
     sdx[t] <- sqrt(sum((x[t, ] - mx[t])^2) / (N-1))
@@ -101,8 +101,8 @@ bootstrap_onestep <- function(fk_model, N, theta = NULL,
   # sample N times from the prior of X
   x <- matrix(fk_model$sample_m0(N), ncol = N, nrow = 1)
   # initialise weights
-  w <- matrix(exp(fk_model$logG(1, x[1, ], mean = theta)), ncol = N, nrow = 1) # w_t
-  W <- matrix(w[1, ] / sum(w[1, ]), ncol = N, nrow = 1) # W_t
+  w <- matrix(fk_model$logG(1, x[1, ], mean = theta), ncol = N, nrow = 1) # w_t
+  W <- matrix(exp(w[1, ]) / sum(exp(w[1, ])), ncol = N, nrow = 1) # W_t
   if (eff_particle_no(W[t-1, ]) < essmin_fn(N)) {
     A <- matrix(resampling(W), ncol = N, nrow = 1)
   } else {
