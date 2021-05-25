@@ -1,17 +1,11 @@
 detach("package:smc", unload=TRUE)
 rm(list = ls())
 library(smc)
+library(Rcpp)
 
 set.seed(1)
 
-# # not the same for whatever reason, so use test version
-# test_Xt <- test_generate_SV_data(mu, rho, sigma2, tt)
-# Xt <- generate_SV_data(mu, rho, sigma2, tt)
-# Yt <- rnorm(tt, 0, 1) * exp(Xt)
-# 
-# print(test_Xt)
-# print(Xt)
-
+## Bootstrap filter
 tmax <- 1000
 mu <- -1
 rho <- 0.95
@@ -22,17 +16,21 @@ Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
 
 boot_sv <- Bootstrap_SV$new(data = Yt, mu = -1, sigma = 0.15, rho = 0.95)
 
-N <- 1000
+N <- 5000
 output <- bootstrap_filter(boot_sv, N, tmax)
 
-par(mfrow = c(2, 1))
-#plot(Yt, type = "l")
+mod <- Module("particles", PACKAGE="smc")
+Bootstrap_SV_C <- mod$Bootstrap_SV_C
+boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
+output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+
+par(mfrow = c(1,2))
 plot(Xt, type = "l")
 lines(output$mx, col = "red")
-#plot(output$sdx, type = "l")
+lines(output2$mx, col="green")
 plot(1:tmax, output$ess, type = "l")
-rm(output)
 
+## SMC^2
 tmax <- 1000
 mu <- -1
 rho <- 0.95
@@ -45,4 +43,4 @@ sd_prior <- 0.2
 mu_prior <- -1
 
 smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
-                           mu_prior = -1, sd_prior = 1, sd_prop = 1)
+                           mu_prior = -0.7, sd_prior = 0.2, sd_prop = 1)
