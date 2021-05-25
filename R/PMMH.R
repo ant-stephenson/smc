@@ -33,7 +33,9 @@ pmmh_onestep <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop, ...
   N <- dims[2]
   tn <- dims[1] - 1
   # update theta with random walk proposal
-  theta_prop <- theta + rnorm(1, mean = 0, sd = sd_prop)
+  theta_prop <- c()
+  theta_prop[1] <- rnorm(1, mean = mu_prior[1], sd = sd_prop[1])
+  theta_prop[2] <- exp(rnorm(1, mean = log(mu_prior[2]), sd = sd_prop[2]))
   # update X and A with boostrap filter
   if (tn > 0) bs_result <- bootstrap_filter(fk_model, N, tmax = tn, ...)
   else bs_result <- bootstrap_onestep(fk_model, N, ...)
@@ -45,7 +47,8 @@ pmmh_onestep <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop, ...
   #r_denom <- exp(dnorm(x = theta, mean = 0, sd = sd_prior, log = TRUE)) *
   #  full_lik(fk_model, x, A, theta, N, tn)
   #r_pmmh <- r_num / r_denom
-  prior_diff <- ((theta - mu_prior)^2 - (theta_prop - mu_prior)^2) / (2 * sd_prior^2)
+  # browser()
+  prior_diff <- sum(((theta - mu_prior)^2 - (theta_prop - mu_prior)^2) / (2 * sd_prior^2))
   lr_pmmh <- #dnorm(x = theta_prop, mean = mu_prior, sd = sd_prior, log = TRUE) +
     log_lik(fk_model, x_prop, A_prop, N, tn) -
   #  dnorm(x = theta_prop, mean = mu_prior, sd = sd_prior, log = TRUE) -
@@ -62,12 +65,14 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
   tmax <- length(Yt) - 1
   # compute threshold
   essmin <- essmin_fn(Nt)
+
   # initialise thetas
-  thetas <- matrix(NA, nrow = (tmax + 1), ncol = Nt)
-  thetas[1, ] <- rnorm(n = Nt, mean = mu_prior, sd = sd_prior)
+  thetas <- array(NA, dim=c(tmax+1, Nt, 2))
+  thetas[1, ,1] <- rnorm(n = Nt, mean = mu_prior[1], sd = sd_prior[1])
+  thetas[1, ,2] <- exp(rnorm(n = Nt, mean = log(mu_prior[2]), sd = sd_prior[2]))
   # initialise Nt FK models
-  sv_models <- lapply(1:Nt, function(s) Bootstrap_SV$new(data = Yt, mu = thetas[1, s],
-                                                         sigma = sigma, rho = rho))
+  sv_models <- lapply(1:Nt, function(s) Bootstrap_SV$new(data = Yt, mu = thetas[1, s, 1],
+                                                         sigma = thetas[1, s, 2], rho = rho))
   # initialise x
   xs <- array(NA, dim = c(tmax+1, Nt, Nx))
   xs[1, , ] <- matrix(unlist(lapply(sv_models, function(x) x$sample_m0(N = Nx))),
@@ -94,30 +99,28 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
         if (t == 2) A <- NULL
         else A <- matrix(As[1:(t-2), s, ], nrow = t-2)
         x <- matrix(xs[1:(t-1), s, ], nrow = t-1)
-        pmmh_results <- pmmh_onestep(sv_models[[s]], thetas[t-1, s], x, A,
-                                     mu_prior, sd_prior, sd_prop, ...)
         
         # use population of thetas to improve sampling
-        mut <- sum(Wm[t-1,] * thetas[t-1, ])/sum(Wm[t-1,])
-        sd_t <- sqrt(sum(Wm[t-1,] * (thetas[t-1,]-mut)^2)/sum(Wm[t-1,]))
+        mut <- sapply(1:2, function(s) sum(Wm[t-1,] * thetas[t-1, ,s])/sum(Wm[t-1,]))
+        sd_t <- sapply(1:2, function(s) sqrt(sum(Wm[t-1,] * (thetas[t-1,,s]-mut[s])^2)/sum(Wm[t-1,])))
         
         pmmh_results <- pmmh_onestep(sv_models[[s]], thetas[t-1, s, ], x, A,
                                      mut, sd_prior, sd_t, ...)
-        thetas[t, s] <- pmmh_results$theta
+        thetas[t, s, ] <- pmmh_results$theta
         xs[1:(t-1), s, ] <- pmmh_results$x
         if (!is.null(pmmh_results$A)) As[1:(t-2), s, ] <- pmmh_results$A
       }
       wm[t-1, ] <- 0 # log(1)
       # update Nt FK models
       sv_models <- lapply(1:Nt, 
-                          function(s) Bootstrap_SV$new(data = Yt, mu = thetas[t, s],
-                                                       sigma = sigma, rho = rho))
+                          function(s) Bootstrap_SV$new(data = Yt, mu = thetas[t, s, 1],
+                                                       sigma = thetas[t, s, 2], rho = rho))
     } else {
-      thetas[t, ] <- thetas[t-1, ]
+      thetas[t, , ] <- thetas[t-1, , ]
     }
     # update ancestor variables
     if (t > 2) As[t-1, , ] <- As[t-2, , ]
-    print(mean(thetas[t, ]))
+    print(colMeans(thetas[t,,]))
     # perform step t for each particle filter
     xs[t, , ] <- matrix(unlist(lapply(1:Nt, function(s) {
       sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
