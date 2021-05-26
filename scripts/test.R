@@ -19,11 +19,9 @@ N <- 5000
 set.seed(2)
 output <- bootstrap_filter(boot_sv, N, tmax)
 
-mod <- Module("particles", PACKAGE="smc")
-Bootstrap_SV_C <- mod$Bootstrap_SV_C
 boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
 set.seed(2)
-output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+output2 <- bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 par(mfrow = c(2, 1))
 plot(Xt, type = "l")

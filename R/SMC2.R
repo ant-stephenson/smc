@@ -1,3 +1,6 @@
+
+Rcpp::loadModule("particles", TRUE)
+
 # Computation of log(L_T^N) for r_PMMH
 log_lik <- function(fk_model, x, A, N, tn) {
   if (is.null(A)) A <- matrix(rep(1:N, tn), nrow = tn, ncol = N, byrow = TRUE)
@@ -21,15 +24,14 @@ pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop
   # update theta with random walk proposal
   theta_prop <- theta + rnorm(1, mean = 0, sd = sd_prop)
   # update X and A with boostrap filter
-  mod <- Module("particles", PACKAGE = "smc")
   if (tn > 0) bs_result <- mod$bootstrap_filter_rcpp(fk_model, N, tn)
   else bs_result <- mod$bootstrap_onestep_rcpp(fk_model, N)
   x_prop <- bs_result$x
   A_prop <- bs_result$A
   # compute acceptance probability
   prior_diff <- ((theta - mu_prior)^2 - (theta_prop - mu_prior)^2) / (2 * sd_prior^2)
-  lr_pmmh <- log_lik(fk_model, x_prop, A_prop, N, tn) - log_lik(fk_model, x, A, N, tn) + 
-    prior_diff
+  lr_pmmh <- log_lik(fk_model, x_prop, A_prop, N, tn) - 
+    log_lik(fk_model, x, A, N, tn) + prior_diff
   # accept
   if (log(runif(1)) < lr_pmmh) return(list(theta = theta_prop, x = x_prop, A = A_prop))
   # reject
@@ -43,11 +45,9 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
   # compute threshold
   essmin <- essmin_fn(Nt)
   # initialise thetas
-  thetas <- matrix(NA, nrow = (tmax + 1), ncol = Nt)
+  thetas <- matrix(NA, nrow = tmax+1, ncol = Nt)
   thetas[1, ] <- rnorm(n = Nt, mean = mu_prior, sd = sd_prior)
   # initialise Nt FK models
-  mod <- Module("particles", PACKAGE = "smc")
-  Bootstrap_SV_C <- mod$Bootstrap_SV_C
   sv_models <- lapply(1:Nt, function(s) new(Bootstrap_SV_C, Yt, thetas[1, s], sigma, rho))
   # initialise x
   xs <- array(NA, dim = c(tmax+1, Nt, Nx))
@@ -85,8 +85,7 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
       # update Nt FK models
       sv_models <- lapply(1:Nt, 
                           function(s) new(Bootstrap_SV_C, Yt, thetas[t, s], sigma, rho))
-      return(list(t = t, sv_models = sv_models, xs = xs, As = As))
-      } else {
+    } else {
       thetas[t, ] <- thetas[t-1, ]
     }
     # update ancestor variables

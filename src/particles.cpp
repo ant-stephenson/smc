@@ -29,6 +29,7 @@ double eff_particle_no(
 IntegerVector systematic_resampling(const NumericVector W) {
   int N = W.length();
   NumericVector v = cumsum(W);
+  //NumericVector v = (float)N * vs;
   float s = R::runif(0, 1) * 1.0/(float)N;
   IntegerVector A(N);
   int m = 0;
@@ -144,6 +145,7 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
     if (ess(t-1) < essmin) {
       r.push_back(t-1);
       A(t-1, _) = systematic_resampling(W(t-1, _));
+      hw = 0 * hw;
       hw = 0*hw;
     }
     else {
@@ -152,9 +154,9 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
       }
       hw = w;
     }
-    IntegerMatrix::Row s = A(t-1, _);
+    IntegerVector s = A(t-1, _);
     s = s - 1;
-    
+
     // draw X_t from transition kernel
     NumericVector xp = ncindex(x, t-1, s);
     x(t, _) = fk_model.sample_m(xp);
@@ -175,8 +177,15 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
   return output;
 }
 
-List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
-  //float essmin = (*f)(N);
+//' One-step bootstrap filter
+//' 
+//' Implements a bootstrap particle filter with T=1.
+//' Takes an object of class Bootstrap_SV_C as argument, with number of particles N.
+//' @name bootstrap_onestep_rcpp
+//' @export bootstrap_onestep_rcpp
+//' @field fk_model Bootstrap_SV_C object
+//' @field N number of particles
+List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {
   float essmin = essmin_fn(N);
   
   // initialise simulated values of X
@@ -204,7 +213,7 @@ List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) 
   }
   
   // convert A to index
-  IntegerVector s = A;
+  IntegerVector s = clone(A);
   s = s - 1;
   
   // draw X_1 from transition kernel
@@ -218,7 +227,9 @@ List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) 
 
 
 // Expose class and function to R using RcppModules.
+
 RCPP_EXPOSED_CLASS(Bootstrap_SV_C);
+
 RCPP_MODULE(particles) {
   
   Rcpp::class_<Bootstrap_SV_C>("Bootstrap_SV_C")
@@ -240,7 +251,6 @@ RCPP_MODULE(particles) {
   function("bootstrap_filter_rcpp", &bootstrap_filter_rcpp);
   function("bootstrap_onestep_rcpp", &bootstrap_onestep_rcpp);
 }
-
 
 /*** R
 # set.seed(1)
