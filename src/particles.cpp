@@ -130,8 +130,8 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
   NumericMatrix W(tmax+1, N);
   NumericVector hw(N);
   
-  w = exp(fk_model.logG(1, x(0, _)));
-  W(0, _) = w / sum(w);
+  w = fk_model.logG(1, x(0, _));
+  W(0, _) = exp(w) / sum(exp(w));
   
   // initialise ancestor variables
   IntegerMatrix A(tmax, N);
@@ -144,7 +144,7 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
     if (ess(t-1) < essmin) {
       r.push_back(t-1);
       A(t-1, _) = systematic_resampling(W(t-1, _));
-      hw = 0*hw + 1;
+      hw = 0*hw;
     }
     else {
       for (int i=0; i<N; i++) {
@@ -161,8 +161,8 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
     
     // update weights
     NumericVector xt = ncindex(x, t, s);
-    w = hw * exp(fk_model.logG(t, xt));
-    W(t, _) = w / sum(w);
+    w = hw + fk_model.logG(t, xt);
+    W(t, _) = exp(w) / sum(exp(w));
     
     // update mean and sd output
     mx(t) = sum(W(t, _) * x(t, _));
@@ -174,6 +174,48 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
   
   return output;
 }
+
+List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
+  //float essmin = (*f)(N);
+  float essmin = essmin_fn(N);
+  
+  // initialise simulated values of X
+  NumericVector x(N);
+  // sample N times from the prior
+  x = fk_model.sample_m0(N);
+  
+  // initialise weights
+  NumericVector w(N);
+  NumericVector W(N);
+  
+  w = exp(fk_model.logG(1, x));
+  W = w / sum(w);
+  
+  // initialise ancestor variables
+  IntegerVector A(N);
+  
+  if (eff_particle_no(W) < essmin) {
+    A = systematic_resampling(W);
+  }
+  else {
+    for (int i=0; i<N; i++) {
+      A(i) = i + 1;
+    }
+  }
+  
+  // convert A to index
+  IntegerVector s = A;
+  s = s - 1;
+  
+  // draw X_1 from transition kernel
+  NumericVector xp(N);
+  xp = x[s];
+  x = fk_model.sample_m(xp);
+  
+  List output = List::create(_["A"] = A, _["x"] = x);
+  return output;
+}
+
 
 // Expose class and function to R using RcppModules.
 RCPP_EXPOSED_CLASS(Bootstrap_SV_C);
@@ -196,6 +238,7 @@ RCPP_MODULE(particles) {
   ;
   
   function("bootstrap_filter_rcpp", &bootstrap_filter_rcpp);
+  function("bootstrap_onestep_rcpp", &bootstrap_onestep_rcpp);
 }
 
 
