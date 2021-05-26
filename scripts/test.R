@@ -19,11 +19,9 @@ N <- 5000
 set.seed(2)
 output <- bootstrap_filter(boot_sv, N, tmax)
 
-mod <- Module("particles", PACKAGE="smc")
-Bootstrap_SV_C <- mod$Bootstrap_SV_C
 boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
 set.seed(2)
-output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+output2 <- bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 par(mfrow = c(2, 1))
 plot(Xt, type = "l")
@@ -38,11 +36,11 @@ rho <- 0.95
 sigma <- 0.15
 Xt <- generate_SV_data(mu, rho, sigma, tmax)
 Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 50
-Nt <- 100
+Nx <- 100
+Nt <- 200
 sd_prior <- 0.2
-mu_prior <- -0.7
-sd_prop = 1
+mu_prior <- -1.1
+sd_prop = 0.5
 
 smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, mu_prior, 
                                 sd_prior, sd_prop)
