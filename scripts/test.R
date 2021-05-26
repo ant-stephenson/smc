@@ -34,39 +34,49 @@ rm(output)
 rm(output2)
 gc()
 
-library(microbenchmark)
+# library(microbenchmark)
+# 
+# run_filter <- function(filter_fn, ...) {
+#   out <- filter_fn(...)
+#   rm(out)
+#   gc()
+#   return(NA)
+# }
+# funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
+# 
+# bench_res <- microbenchmark(list=setNames(funcs, c("R","Rcpp")),
+#                times=5L)
+# 
+# print(bench_res, signif=3)
 
-run_filter <- function(filter_fn, ...) {
-  out <- filter_fn(...)
-  rm(out)
-  gc()
-  return(NA)
-}
-funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
 
-bench_res <- microbenchmark(list=setNames(funcs, c("R","Rcpp")),
-               times=5L)
-
-print(bench_res, signif=3)
-
-
-## SMC^2
+## SMC^2 -run once for burn-in/parameters
 tmax <- 1000
 mu <- -1
 rho <- 0.95
 sigma <- 0.15
 Xt <- generate_SV_data(mu, rho, sigma, tmax)
 Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 100
-Nt <- 1000
+Nx <- 1000
+Nt <- 100
 sd_prior <- 0.2
-mu_prior <- -1
 mu_prior <- -0.7
 sd_prop <- 1.5
 
+mu_prior = c(-0.7, 0.2)
+sd_prior <- c(0.2, 0.05)
+sd_prop <- c(1.5, 1.0)
+
 smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
-                           mu_prior = -0.7, sd_prior = 0.2, sd_prop = 1)
                            mu_prior = mu_prior, sd_prior = sd_prior, sd_prop = sd_prop)
+
+# check convergence of parameters
+plot(rowMeans(smc_results$thetas[,,1]), type="l")
+lines(rep(mu, tmax+1), col="red")
+# miny <- min(sigma, min(rowMeans(smc_results$thetas[,,2])))
+# maxy <- max(sigma, max(rowMeans(smc_results$thetas[,,2])))
+plot(rowMeans(smc_results$thetas[,,2]), type="l", ylim=c(miny, maxy), log="y")
+lines(rep(sigma, tmax+1), col="red")
 
 ## Get mean and sd of theta from last iteration and then run a bootstrap filter
 
