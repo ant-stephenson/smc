@@ -54,39 +54,18 @@ gc()
 # print(bench_res, signif=3)
 
 
-# ## SMC^2 -run once for burn-in/parameters
+## SMC^2
 # tmax <- 1000
 # mu <- -1
 # rho <- 0.95
 # sigma <- 0.15
 # Xt <- generate_SV_data(mu, rho, sigma, tmax)
 # Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 1000
-Nt <- 500
-sd_prior <- 0.2
-mu_prior <- -0.7
-sd_prop <- 1.5
-
-mu_prior = c(0.0, 0.5)
-sd_prior <- c(1, 1)
-sd_prop <- c(1.5, 1.5)
-
-smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
-                           mu_prior = mu_prior, sd_prior = sd_prior, sd_prop = sd_prop)
-
-## SMC^2
-tmax <- 1000
-mu <- -1
-rho <- 0.95
-sigma <- 0.15
-Xt <- generate_SV_data(mu, rho, sigma, tmax)
-Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 50
+Nx <- 500
 Nt <- 100
-sd_prior <- 0.2
-mu_prior <- -0.7
-sd_prop = 1
-
+mu_prior = c(0.0, 0.2)
+sd_prior <- c(0.5, 0.1)
+sd_prop <- c(1.5, 1.0)
 smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, mu_prior, 
                                 sd_prior, sd_prop)
 # check convergence of parameters
@@ -108,7 +87,7 @@ rm(smc_results)
 # smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
 #                            mu_prior = mut, sd_prior = 0.2, sd_prop = sd_t)
 boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, mut, sigmat, 0.95)
-output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+output2 <- bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 mseSmc2 <- mse(output2$mx)
 rm(output2)
