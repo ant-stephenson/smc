@@ -31,18 +31,11 @@ public:
 
 };
 
-
 float essmin_fn(int N);
 
 // declare filtering function
 Rcpp::List bootstrap_filter_rcpp(
     Bootstrap_SV_C fk_model, int N, int tmax//, float(*f)(int)
 );
-
-Rcpp::List run_bootstrap_filter(Rcpp::NumericVector data, float mu, float sigma, float rho, int N, int tmax);
-
-// declare conversion C++ -> R type
-
-
 
 #endif

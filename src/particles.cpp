@@ -3,6 +3,14 @@
 #include "particles.h"
 using namespace Rcpp;
 
+//' Effective Particle Number
+//' 
+//' Uses the weight vector input to compute an estimate of effective particle number for use in particle filters.
+//' @name eff_particle_no
+//' @export eff_particle_no
+//'
+//' @field w vector of weights
+//[[Rcpp::export]]
 double eff_particle_no(
     const NumericVector w 
 ) 
@@ -11,6 +19,12 @@ double eff_particle_no(
   return ess;
 }
 
+//' Systematic resampling algorithm
+//' 
+//' Samples a single uniform random variable U and then assigns values U(n) = (n - 1 + U)/N.
+//' Used to generate a vector of integers to index the particles.
+//' @name systematic_resampling_rcpp
+//' @export systematic_resampling_rcpp
 // [[Rcpp::export(name = "systematic_resampling_rcpp")]]
 IntegerVector systematic_resampling(const NumericVector W) {
   int N = W.length();
@@ -29,6 +43,21 @@ IntegerVector systematic_resampling(const NumericVector W) {
   return A;
 }
 
+//' Bootstrap class for Stochastic Volatility (SV) model
+//' 
+//' Initialised with a data vector of observations (Yt), an estimate mean and 
+//' standard deviation parameter and rho controls the autocorrelation.
+//' 
+//' The object defines methods to sample from the initial distribution M0 and 
+//' the subsequent transition kernels Mt and calculate the log probability from 
+//' the potential function Gt.
+//' @name Bootstrap_SV_C
+//' @export Bootstrap_SV_C
+//' @exportClass Bootstrap_SV_C
+//' @field data vector of observations
+//' @field mu estimate of mean of latent var (float)
+//' @field sigma estimate of sd of latent
+//' @field rho autocorrelation parameter
 Bootstrap_SV_C::Bootstrap_SV_C(NumericVector data, float mu, float sigma, float rho)
 {
   this->_data = data;
@@ -71,7 +100,16 @@ float essmin_fn(int N) {
   return (float)N/2.0;
 }
 
-
+//' Bootstrap filter
+//' 
+//' Implements a bootstrap particle filter.
+//' Takes an object of class Bootstrap_SV_C as argument, with number of particles
+//' N and number of time steps to run.
+//' @name bootstrap_filter_rcpp
+//' @export bootstrap_filter_rcpp
+//' @field fk_model Bootstrap_SV_C object
+//' @field N number of particles
+//' @field tmax number of steps
 List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
   //float essmin = (*f)(N);
   float essmin = essmin_fn(N);
@@ -138,8 +176,16 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
   return output;
 }
 
-List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) = [](int N) {return essmin_fn(N);}) {
-  //float essmin = (*f)(N);
+
+//' One-step bootstrap filter
+//' 
+//' Implements a bootstrap particle filter with T=1.
+//' Takes an object of class Bootstrap_SV_C as argument, with number of particles N.
+//' @name bootstrap_onestep_rcpp
+//' @export bootstrap_onestep_rcpp
+//' @field fk_model Bootstrap_SV_C object
+//' @field N number of particles
+List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {
   float essmin = essmin_fn(N);
   
   // initialise simulated values of X
@@ -179,6 +225,9 @@ List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {//, float(*f)(int) 
   return output;
 }
 
+
+
+// Expose class and function to R using RcppModules.
 
 RCPP_EXPOSED_CLASS(Bootstrap_SV_C);
 
