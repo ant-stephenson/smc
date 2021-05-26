@@ -85,7 +85,7 @@ output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 Plot the mean outputs from the R and Rcpp versions over the true latent variable. We see that the `Rcpp` version (in green) is more or less identical to the (red) `R` version. The difference we attribute to random seeds.
 ```{r, plot}
-par(mfrow = c(1,2))
+par(mfrow = c(2,1))
 plot(Xt, type = "l")
 lines(output$mx, col = "red")
 lines(output2$mx, col="green")
@@ -119,3 +119,42 @@ print(bench_res, signif=3)
 
 The particle filter implementation above relies on knowing the parameters $\theta, \rho, \mu$ *a priori*. Of course, this is not likely in any realistic scenario, so we must be able to estimate these parameters as well. Here we choose to implement the SMC^2 algorithm to simultaneously estimate the parameters alongside state estimation with the particle filter.
 
+We run the SMC^2 algorithm to estimate the parameters $\mu$ and $\sigma$, using a Gaussian random walk proposal for both $\mu$ and $\log\sigma$. Since parameter estimation means we have an effective burn-in for state estimation, we choose to take the final parameters from the SMC^2 results and use them in an additional bootstrap filtering step.
+```{r, smc2}
+tmax <- 1000
+mu <- -1
+rho <- 0.95
+sigma <- 0.15
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
+Nx <- 1000
+Nt <- 100
+
+mu_prior = c(-0.7, 0.2)
+sd_prior <- c(0.2, 0.05)
+sd_prop <- c(1.5, 1.0)
+
+smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
+                           mu_prior = mu_prior, sd_prior = sd_prior, sd_prop = sd_prop)
+```
+
+Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
+```{r, smc2 out}
+plot(rowMeans(smc_results$thetas[,,1]))
+plot(rowMeans(smc_results$thetas[,,2]))
+```
+
+Now to run the bootstrap filter, we use the population of thetas at the final step to get the estimate for the parameters $\mu$ and $\sigma$ to use in the final state estimation step.
+```{r, params}
+mut = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,1])/sum(smc_results$Wm[tmax+1,])
+sigma_t = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,2])/sum(smc_results$Wm[tmax+1,])
+```
+
+```{r, bpf2}
+boot_sv_smc2 <- new(Bootstrap_SV_C, Yt, mut, sigma_t, 0.95)
+output_smc2 <- mod$bootstrap_filter_rcpp(boot_sv_smc2, N ,tmax)
+
+par(mfrow = c(2,1))
+plot(Xt, type = "l")
+lines(output_smc2$mx, col = "red")
+```
