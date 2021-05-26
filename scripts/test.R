@@ -56,11 +56,11 @@ rho <- 0.95
 sigma <- 0.15
 Xt <- generate_SV_data(mu, rho, sigma, tmax)
 Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 100
-Nt <- 200
+Nx <- 50
+Nt <- 100
 sd_prior <- 0.2
-mu_prior <- -1.1
-sd_prop = 0.5
+mu_prior <- -0.7
+sd_prop = 1
 
 smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, mu_prior, 
                                 sd_prior, sd_prop)

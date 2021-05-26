@@ -146,6 +146,7 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
       r.push_back(t-1);
       A(t-1, _) = systematic_resampling(W(t-1, _));
       hw = 0 * hw;
+      hw = 0*hw;
     }
     else {
       for (int i=0; i<N; i++) {
@@ -175,7 +176,6 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
   
   return output;
 }
-
 
 //' One-step bootstrap filter
 //' 
@@ -224,7 +224,6 @@ List bootstrap_onestep_rcpp(Bootstrap_SV_C fk_model, int N) {
   List output = List::create(_["A"] = A, _["x"] = x);
   return output;
 }
-
 
 
 // Expose class and function to R using RcppModules.
