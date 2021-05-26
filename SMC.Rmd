@@ -85,11 +85,15 @@ output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 
 Plot the mean outputs from the R and Rcpp versions over the true latent variable. We see that the `Rcpp` version (in green) is more or less identical to the (red) `R` version. The difference we attribute to random seeds.
 ```{r, plot}
+library(latex2exp)
+pdf("../doc/figs/state_estimation_pf.pdf", width=8, height=3)
 par(mfrow = c(2,1))
-plot(Xt, type = "l")
+plot(Xt, type = "l", ylab=TeX("$X_t$"), main="")
 lines(output$mx, col = "red")
 lines(output2$mx, col="green")
-plot(1:tmax, output$ess, type = "l")
+legend("bottomleft", legend=c("R", "Rcpp"))
+plot(1:tmax, output$ess, type = "l", ylab="ESS")
+dev.off()
 
 # Delete the outputs to avoid running out of memory
 rm(output)
@@ -140,8 +144,13 @@ smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho,
 
 Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
 ```{r, smc2 out}
-plot(rowMeans(smc_results$thetas[,,1]))
-plot(rowMeans(smc_results$thetas[,,2]))
+pdf("../doc/figs/param_estimation_smc2.pdf", width=8, height=3)
+par(mfrow = c(2,1))
+plot(rowMeans(smc_results$thetas[,,1]), ylab=Tex("$\mu$"), type="l")
+lines(rep(mu, tmax+1), col="red")
+plot(rowMeans(smc_results$thetas[,,2]), ylab=Tex("$\sigma^2$"), type="l")
+lines(rep(sigma, tmax+1), col="red")
+dev.off()
 ```
 
 Now to run the bootstrap filter, we use the population of thetas at the final step to get the estimate for the parameters $\mu$ and $\sigma$ to use in the final state estimation step.
@@ -150,11 +159,14 @@ mut = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,1])/sum(smc_resul
 sigma_t = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,2])/sum(smc_results$Wm[tmax+1,])
 ```
 
+Plot the output from the final bootstrap particle filter, using the parameters estimated using SMC^2.
 ```{r, bpf2}
 boot_sv_smc2 <- new(Bootstrap_SV_C, Yt, mut, sigma_t, 0.95)
 output_smc2 <- mod$bootstrap_filter_rcpp(boot_sv_smc2, N ,tmax)
 
+pdf("../doc/figs/state_estimation_smc2.pdf", width=8, height=3)
 par(mfrow = c(2,1))
-plot(Xt, type = "l")
+plot(Xt, type = "l", ylab=TeX("$X_t$"))
 lines(output_smc2$mx, col = "red")
+dev.off()
 ```
