@@ -121,14 +121,11 @@ smc_squared <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop,
     # update ancestor variables
     if (t > 2) As[t-1, , ] <- As[t-2, , ]
     print(colMeans(thetas[t,,]))
-    # perform step t for each particle filter
-    xs[t, , ] <- matrix(unlist(lapply(1:Nt, function(s) {
-      sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
-    })), ncol = Nx, byrow = TRUE)
-    wm[t, ] <- wm[t-1, ] +
-      unlist(lapply(1:Nt, function(s) {
-        log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]]))) / Nx)
-        }))
+    for (s in 1:Nt) {
+      xs[t, s, ] <- sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
+      wm[t, s] <- wm[t-1, s] + 
+        log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]])))) / Nx
+    }
     Wm[t, ] <- exp(wm[t, ]) / sum(exp(wm[t, ]))
   }
   return(list(thetas = thetas, xs = xs, As = As, wm = wm, Wm = Wm, ess = ess))
