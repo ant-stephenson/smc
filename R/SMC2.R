@@ -24,8 +24,8 @@ pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop
   # update theta with random walk proposal
   theta_prop <- theta + rnorm(1, mean = 0, sd = sd_prop)
   # update X and A with boostrap filter
-  if (tn > 0) bs_result <- mod$bootstrap_filter_rcpp(fk_model, N, tn)
-  else bs_result <- mod$bootstrap_onestep_rcpp(fk_model, N)
+  if (tn > 0) bs_result <- bootstrap_filter_rcpp(fk_model, N, tn)
+  else bs_result <- bootstrap_onestep_rcpp(fk_model, N)
   x_prop <- bs_result$x
   A_prop <- bs_result$A
   # compute acceptance probability
