@@ -25,18 +25,18 @@ double eff_particle_no(
 //' Used to generate a vector of integers to index the particles.
 //' @name systematic_resampling_rcpp
 //' @export systematic_resampling_rcpp
-// [[Rcpp::export(name = "systematic_resampling_rcpp")]]
+// [[Rcpp::export(name = "systematic_resampling")]]
 IntegerVector systematic_resampling(const NumericVector W) {
   int N = W.length();
   NumericVector v = cumsum(W);
-  //NumericVector v = (float)N * vs;
-  float s = R::runif(0, 1) * 1.0/(float)N;
+  float inc = 1.0/(float)N;
+  float s = R::runif(0, 1) * inc;
   IntegerVector A(N);
   int m = 0;
   for (int n=0; n<N; n++) {
-    while(v[n] > s) {
+    while(v[n] > s + inc) {
       m += 1;
-      s += 1.0/(float)N;
+      s += inc;
     }
     A[n] = (m == 0) ? 1 : m;
   }
