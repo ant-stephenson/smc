@@ -121,10 +121,44 @@ print(bench_res, signif=3)
 
 ## SMC^2
 
-The particle filter implementation above relies on knowing the parameters $\theta, \rho, \mu$ *a priori*. Of course, this is not likely in any realistic scenario, so we must be able to estimate these parameters as well. Here we choose to implement the SMC^2 algorithm to simultaneously estimate the parameters alongside state estimation with the particle filter.
+The particle filter implementation above relies on knowing the parameters $\sigma^2, \rho, \mu$ *a priori*. Of course, this is not likely in any realistic scenario, so we must be able to estimate these parameters as well. Here we choose to implement the SMC^2 algorithm to simultaneously estimate the parameters alongside state estimation with the particle filter.
 
-We run the SMC^2 algorithm to estimate the parameters $\mu$ and $\sigma$, using a Gaussian random walk proposal for both $\mu$ and $\log\sigma$. Since parameter estimation means we have an effective burn-in for state estimation, we choose to take the final parameters from the SMC^2 results and use them in an additional bootstrap filtering step.
-```{r, smc2}
+We run the SMC^2 algorithm to estimate the parameters $\mu$ and $\sigma$, using a Gaussian random walk proposal for both $\mu$ and $\sigma$. Since parameter estimation means we have an effective burn-in for state estimation, we choose to take the final parameters from the SMC^2 results and use them in an additional bootstrap filtering step. 
+
+We start by estimating only the $\mu$ parameter, before attempting to extend to $\sigma$. We choose to avoid attempting to estimate $\rho$ due to computational difficulties associated with the tight prior needed to constrain the values to something close to (but less than or equal to) 1. This seems reasonable for the kind of SV setting we are considering due to the generally accepted assumption that it be so constrained that an assumed value close to 1 will suffice.
+
+```{r,smc2}
+tmax <- 1000
+mu <- -0.99
+rho <- 0.95
+sigma <- 0.15
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
+Nx <- 200
+Nt <- 300
+mu_prior <- -0.5
+sd_prior <- 0.3
+sd_prop <- 1
+smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, 
+                                mu_prior = mu_prior, sd_prior = sd_prior, sd_prop =sd_prop)
+thetas <- smc_results$thetas
+Wm <- smc_results$Wm
+rm(smc_results)
+```
+
+Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
+```{r, smc2 out}
+pdf("../doc/figs/param_estimation_smc2.pdf", width=8, height=3)
+par(mfrow = c(2,1))
+plot(rowMeans(thetas[,,1]), ylab=Tex("$\mu$"), type="l")
+lines(rep(mu, tmax+1), col="red")
+plot(rowMeans(thetas[,,2]), ylab=Tex("$\sigma^2$"), type="l")
+lines(rep(sigma, tmax+1), col="red")
+dev.off()
+```
+
+We now try to extend the SMC^2 implementation to $\sigma$.
+```{r, smc22}
 tmax <- 1000
 mu <- -1
 rho <- 0.95
@@ -138,25 +172,30 @@ mu_prior = c(-0.7, 0.2)
 sd_prior <- c(0.2, 0.05)
 sd_prop <- c(1.5, 1.0)
 
-smc_results <- smc_squared(Yt, Nx, Nt, sigma, rho, 
+smc_results2 <- smc_squared_rcpp2(Yt, Nx, Nt, sigma, rho, 
                            mu_prior = mu_prior, sd_prior = sd_prior, sd_prop = sd_prop)
+thetas2 <- smc_results2$thetas
+Wm2 <- smc_results2$Wm
+rm(smc_results2)
 ```
 
 Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
-```{r, smc2 out}
-pdf("../doc/figs/param_estimation_smc2.pdf", width=8, height=3)
+```{r, smc22 out}
+pdf("../doc/figs/param_estimation_smc22.pdf", width=8, height=3)
 par(mfrow = c(2,1))
-plot(rowMeans(smc_results$thetas[,,1]), ylab=Tex("$\mu$"), type="l")
+plot(rowMeans(thetas2[,,1]), ylab=Tex("$\mu$"), type="l")
 lines(rep(mu, tmax+1), col="red")
-plot(rowMeans(smc_results$thetas[,,2]), ylab=Tex("$\sigma^2$"), type="l")
+plot(rowMeans(thetas2[,,2]), ylab=Tex("$\sigma^2$"), type="l")
 lines(rep(sigma, tmax+1), col="red")
 dev.off()
 ```
+We can see that the algorithm does a very poor job of estimating both $\mu$ and $\sigma^2$ together, so we opt to ignore this implementation when considering the final filtering step and use only the single parameter version
+
 
 Now to run the bootstrap filter, we use the population of thetas at the final step to get the estimate for the parameters $\mu$ and $\sigma$ to use in the final state estimation step.
 ```{r, params}
-mut = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,1])/sum(smc_results$Wm[tmax+1,])
-sigma_t = sum(smc_results$Wm[tmax+1,] * smc_results$thetas[tmax+1,,2])/sum(smc_results$Wm[tmax+1,])
+mut = sum(Wm[tmax+1,] * thetas[tmax+1,,1])/sum(Wm[tmax+1,])
+sigma_t = sum(Wm[tmax+1,] * thetas[tmax+1,,2])/sum(Wm[tmax+1,])
 ```
 
 Plot the output from the final bootstrap particle filter, using the parameters estimated using SMC^2.
