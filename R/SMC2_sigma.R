@@ -26,14 +26,14 @@ pmmh_onestep_rcpp2 <- function(fk_model, theta, x, A, mu_prior, sigma_prior, sd_
   x_prop <- bs_result$x
   A_prop <- bs_result$A
   # compute acceptance probability
-  ln_diff <- ((theta[1] - mu_prior[1])^2 - (theta_prop[1] - mu_prior[1])^2) / 
-    (2 * mu_prior[2]^2)
+  ln_diff <- dnorm(theta_prop, mu_prior[1], mu_prior[2], log = TRUE) - 
+    dnorm(theta, mu_prior[1], mu_prior[2], log = TRUE)
   lg_diff <- log(dgamma(theta[1], shape = sigma_prior[1], rate = sigma_prior[2])) -
     log(dgamma(theta_prop[1], shape = sigma_prior[1], rate = sigma_prior[2]))
   lr_pmmh <- ln_diff + lg_diff + log_lik(fk_model, x_prop, A_prop, N, tn) - 
     log_lik(fk_model, x, A, N, tn)
   # accept
-  if (log(runif(1)) < lr_pmmh) return(list(theta = theta_prop, x = x_prop, A = A_prop))
+  if (log(runif(1)) < min(lr_pmmh,0)) return(list(theta = theta_prop, x = x_prop, A = A_prop))
   # reject
   else return(list(theta = theta, x = x, A = A))
 }

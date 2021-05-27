@@ -56,16 +56,18 @@ gc()
 
 ## SMC^2
 tmax <- 1000
-mu <- -1
+mu <- -0.99
 rho <- 0.95
 sigma <- 0.15
 Xt <- generate_SV_data(mu, rho, sigma, tmax)
 Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
-Nx <- 500
-Nt <- 100
+Nx <- 200
+Nt <- 300
 mu_prior <- c(0, 0.5)
 sigma_prior <- c(2, 2)
 sd_prop <- c(1.5, 1.0)
+smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, 
+                                mu_prior = -0.5, sd_prior = 0.3, sd_prop =1)
 smc_results <- smc_squared_rcpp2(Yt, Nx, Nt, sigma, rho, mu_prior, sigma_prior, sd_prop)
 # check convergence of parameters
 par(mfrow = c(2,1))

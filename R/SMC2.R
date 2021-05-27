@@ -29,11 +29,13 @@ pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop
   x_prop <- bs_result$x
   A_prop <- bs_result$A
   # compute acceptance probability
-  prior_diff <- ((theta - mu_prior)^2 - (theta_prop - mu_prior)^2) / (2 * sd_prior^2)
+  prior_diff <- dnorm(theta_prop, mu_prior, sd_prior, log = TRUE) - 
+    dnorm(theta, mu_prior, sd_prior, log = TRUE)
   lr_pmmh <- log_lik(fk_model, x_prop, A_prop, N, tn) - 
     log_lik(fk_model, x, A, N, tn) + prior_diff
   # accept
-  if (log(runif(1)) < lr_pmmh) return(list(theta = theta_prop, x = x_prop, A = A_prop))
+  if (log(runif(1)) < min(lr_pmmh, 0)) return(list(theta = theta_prop, x = x_prop, 
+                                                   A = A_prop))
   # reject
   else return(list(theta = theta, x = x, A = A))
 }
@@ -94,8 +96,8 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
     # perform step t for each particle filter
     for (s in 1:Nt) {
       xs[t, s, ] <- sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
-      wm[t, s] <- wm[t-1, s] + 
-        log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]]))) / Nx)
+      wm[t, s] <- wm[t-1, s] + log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, ]))) / Nx)
+        #log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]]))) / Nx)
     }
     Wm[t, ] <- exp(wm[t, ]) / sum(exp(wm[t, ]))
   }
