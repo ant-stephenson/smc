@@ -146,7 +146,6 @@ List bootstrap_filter_rcpp(Bootstrap_SV_C fk_model, int N, int tmax) {//, float(
       r.push_back(t-1);
       A(t-1, _) = systematic_resampling(W(t-1, _));
       hw = 0 * hw;
-      hw = 0*hw;
     }
     else {
       for (int i=0; i<N; i++) {
