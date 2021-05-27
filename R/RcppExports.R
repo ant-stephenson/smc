@@ -30,6 +30,16 @@ NULL
 #' @field tmax number of steps
 NULL
 
+#' One-step bootstrap filter
+#' 
+#' Implements a bootstrap particle filter with T=1.
+#' Takes an object of class Bootstrap_SV_C as argument, with number of particles N.
+#' @name bootstrap_onestep_rcpp
+#' @export bootstrap_onestep_rcpp
+#' @field fk_model Bootstrap_SV_C object
+#' @field N number of particles
+NULL
+
 #' Effective Particle Number
 #' 
 #' Uses the weight vector input to compute an estimate of effective particle number for use in particle filters.
@@ -47,7 +57,7 @@ eff_particle_no <- function(w) {
 #' Used to generate a vector of integers to index the particles.
 #' @name systematic_resampling_rcpp
 #' @export systematic_resampling_rcpp
-systematic_resampling_rcpp <- function(W) {
+systematic_resampling <- function(W) {
     .Call(`_smc_systematic_resampling`, W)
 }
 
