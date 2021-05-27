@@ -1,7 +1,15 @@
 
 Rcpp::loadModule("particles", TRUE)
 
-# Computation of log(L_T^N) for r_PMMH
+#' Computation of log(L_T^N) for r_PMMH
+#' 
+#' @name log_lik
+#' @export log_lik
+#' @field fk_model Bootstrap_SV_C object
+#' @field x state
+#' @field A ancestors
+#' @field N number of particles (x)
+#' @field time now
 log_lik <- function(fk_model, x, A, N, tn) {
   if (is.null(A)) A <- matrix(rep(1:N, tn), nrow = tn, ncol = N, byrow = TRUE)
   if (tn > 1) {
@@ -15,7 +23,17 @@ log_lik <- function(fk_model, x, A, N, tn) {
   return(loglik)
 }
 
-# One step particle marginal Metropolis-Hastings
+#' One step particle marginal Metropolis-Hastings
+#' 
+#' @name pmmh_onestep_rcpp
+#' @export pmmh_onestep_rcpp
+#' @field fk_model Bootstrap_SV_C object
+#' @field theta parameters
+#' @field x state
+#' @field A ancestors
+#' @field mean of prior distribution
+#' @field sd of prior distribution
+#' @field sd of proposal distribution
 pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop, ...) {
   # get N and T
   dims <- dim(x)
@@ -40,7 +58,17 @@ pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop
   else return(list(theta = theta, x = x, A = A))
 }
 
-# Sequential Monte Carlo squared algorithm
+#' Sequential Monte Carlo squared algorithm
+#' 
+#' @name smc_squared_rcpp
+#' @export smc_squared_rcpp
+#' @field Yt observations
+#' @field Nx number of particles (x)
+#' @field Nt number of particles (theta)
+#' @field rho - parameter for autocorrelation
+#' @field mean of prior distribution
+#' @field sd of prior distribution
+#' @field sd of proposal distribution
 smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop, 
                              essmin_fn = function(N) N/2, ...) {
   tmax <- length(Yt) - 1
