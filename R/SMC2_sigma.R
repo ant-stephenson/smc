@@ -44,12 +44,13 @@ pmmh_onestep_rcpp2 <- function(fk_model, theta, x, A, mu_prior, sigma_prior, sd_
   x_prop <- bs_result$x
   A_prop <- bs_result$A
   # compute acceptance probability
-  ln_diff <- dnorm(theta_prop, mu_prior[1], mu_prior[2], log = TRUE) - 
-    dnorm(theta, mu_prior[1], mu_prior[2], log = TRUE)
-  lg_diff <- log(dgamma(theta[1], shape = sigma_prior[1], rate = sigma_prior[2])) -
-    log(dgamma(theta_prop[1], shape = sigma_prior[1], rate = sigma_prior[2]))
+  ln_diff <- dnorm(theta_prop[1], mu_prior[1], mu_prior[2], log = TRUE) - 
+    dnorm(theta[1], mu_prior[1], mu_prior[2], log = TRUE)
+  lg_diff <- log(dgamma(theta[2], shape = sigma_prior[1], rate = sigma_prior[2])) -
+    log(dgamma(theta_prop[2], shape = sigma_prior[1], rate = sigma_prior[2]))
   lr_pmmh <- ln_diff + lg_diff + log_lik(fk_model, x_prop, A_prop, N, tn) - 
     log_lik(fk_model, x, A, N, tn)
+  if (!is.finite(lr_pmmh)) lr_pmmh <- -Inf
   # accept
   if (log(runif(1)) < min(lr_pmmh,0)) return(list(theta = theta_prop, x = x_prop, A = A_prop))
   # reject
@@ -100,19 +101,13 @@ smc_squared_rcpp2 <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sigma_prior, sd_
   for (t in 2:(tmax+1)) {
     # compute ess
     ess[t-1] <- eff_particle_no(Wm[t-1, ])
-    print(ess[t-1])
+    # if (!is.finite(ess[t-1])) browser()
     if (ess[t-1] < essmin) {
       # move particles through PMMH kernel
       for (s in 1:Nt) {
         if (t == 2) A <- NULL
         else A <- matrix(As[1:(t-2), s, ], nrow = t-2)
         x <- matrix(xs[1:(t-1), s, ], nrow = t-1)
-        #return(list(sv_models = sv_models[[s]], theta = thetas[t-1, s, ], x = x, A = A))
-        # use population of thetas to improve sampling
-        #mu_t <- sapply(1:2, function(k) sum(Wm[t-1,] * thetas[t-1, ,k]) / sum(Wm[t-1,]))
-        #sd_t <- sapply(1:2, 
-        #               function(k) sqrt(sum(Wm[t-1,] * (thetas[t-1, ,k] - mu_t[k])^2) / 
-        #                                  sum(Wm[t-1,])))
         pmmh_results <- pmmh_onestep_rcpp2(sv_models[[s]], thetas[t-1, s, ], x, A,
                                           mu_prior, sigma_prior, sd_prop)
         thetas[t, s,] <- pmmh_results$theta
@@ -129,13 +124,13 @@ smc_squared_rcpp2 <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sigma_prior, sd_
     }
     # update ancestor variables
     if (t > 2) As[t-1, , ] <- As[t-2, , ]
-    print(colMeans(thetas[t, , ]))
     # perform step t for each particle filter
     for (s in 1:Nt) {
       xs[t, s, ] <- sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
       wm[t, s] <- wm[t-1, s] + 
         log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]]))) / Nx)
     }
+    wm[t,is.nan(wm[t,])] <- 0
     Wm[t, ] <- exp(wm[t, ]) / sum(exp(wm[t, ]))
   }
   return(list(thetas = thetas, xs = xs, As = As, Wm = Wm, ess = ess))

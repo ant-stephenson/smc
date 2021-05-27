@@ -98,7 +98,6 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
   for (t in 2:(tmax+1)) {
     # compute ess
     ess[t-1] <- eff_particle_no(Wm[t-1, ])
-    print(ess[t-1])
     if (ess[t-1] < essmin) {
       # move particles through PMMH kernel
       for (s in 1:Nt) {
@@ -120,7 +119,6 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
     }
     # update ancestor variables
     if (t > 2) As[t-1, , ] <- As[t-2, , ]
-    print(mean(thetas[t, ]))
     # perform step t for each particle filter
     for (s in 1:Nt) {
       xs[t, s, ] <- sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
