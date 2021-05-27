@@ -84,13 +84,13 @@ Plot the mean outputs from the R and Rcpp versions over the true latent variable
 ```{r, plot}
 library(latex2exp)
 pdf("docs/figs/state_estimation_pf.pdf", width=8, height=3)
-par(mar=c(1,1,1,1))
-par(mfrow = c(2,1))
-plot(Xt, type = "l", ylab=TeX("$X_t$"), main="")
+par(mar=c(4,4,1,4))
+par(mfrow = c(1,2))
+plot(Xt, type = "l", ylab=TeX("$X_t$"), main="", xlab="t")
 lines(output$mx, col = "red")
 lines(output2$mx, col="green")
 legend("bottomleft", legend=c("R", "Rcpp"))
-plot(1:tmax, output$ess, type = "l", ylab="ESS")
+plot(1:tmax, output$ess, type = "l", ylab="ESS", xlab="t")
 dev.off()
 
 # Delete the outputs to avoid running out of memory
@@ -147,8 +147,9 @@ rm(smc_results)
 Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
 ```{r, smc2 out}
 pdf("docs/figs/param_estimation_smc2.pdf", width=8, height=3)
+par(mar=c(4,4,1,4))
 par(mfrow = c(1,1))
-plot(rowMeans(thetas), ylab=Tex("$\mu$"), type="l")
+plot(rowMeans(thetas), ylab=TeX("$\\mu$"), type="l", xlab="t")
 lines(rep(mu, tmax+1), col="red")
 dev.off()
 ```
@@ -178,10 +179,11 @@ rm(smc_results2)
 Again we plot the convergence of the parameters, as we did for the single parameter version.
 ```{r, smc22 out}
 pdf("docs/figs/param_estimation_smc22.pdf", width=8, height=3)
-par(mfrow = c(2,1))
-plot(rowMeans(thetas2[,,1]), ylab=Tex("$\mu$"), type="l")
+par(mar=c(4,4,1,4))
+par(mfrow = c(1,2))
+plot(rowMeans(thetas2[,,1]), ylab=TeX("$\\mu$"), type="l",xlab="t")
 lines(rep(mu, tmax+1), col="red")
-plot(rowMeans(thetas2[,,2]), ylab=Tex("$\sigma^2$"), type="l")
+plot(rowMeans(thetas2[,,2]), ylab=TeX("$\\sigma^2$"), type="l",xlab="t")
 lines(rep(sigma, tmax+1), col="red")
 dev.off()
 ```
@@ -199,8 +201,9 @@ boot_sv_smc2 <- new(Bootstrap_SV_C, Yt, mut, sigma_t, 0.95)
 output_smc2 <- mod$bootstrap_filter_rcpp(boot_sv_smc2, N ,tmax)
 
 pdf("docs/figs/state_estimation_smc2.pdf", width=8, height=3)
-par(mfrow = c(2,1))
-plot(Xt, type = "l", ylab=TeX("$X_t$"))
+par(mar=c(4,4,1,4))
+par(mfrow = c(1,2))
+plot(Xt, type = "l", ylab=TeX("$X_t$"),xlab="t")
 lines(output_smc2$mx, col = "red")
 dev.off()
 ```
