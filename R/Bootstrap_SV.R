@@ -1,15 +1,3 @@
-#' Effective Particle Number
-#' 
-#' Uses the weight vector input to compute an estimate of effective particle number for use in particle filters.
-#' @name eff_particle_no
-#' @export eff_particle_no
-#'
-#' @field w vector of weights
-# eff_particle_no <- function(w) {
-#   ess <- 1/sum(w^2)
-#   return(ess)
-# }
-
 #' Systematic resampling algorithm
 #' 
 #' Samples a single uniform random variable U and then assigns values U(n) = (n - 1 + U)/N.

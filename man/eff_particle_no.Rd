@@ -3,6 +3,9 @@
 \name{eff_particle_no}
 \alias{eff_particle_no}
 \title{Effective Particle Number}
+\usage{
+eff_particle_no(w)
+}
 \description{
 Uses the weight vector input to compute an estimate of effective particle number for use in particle filters.
 }
