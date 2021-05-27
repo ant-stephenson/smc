@@ -1,0 +1,121 @@
+---
+title: "SMC"
+author: "Ant Stephenson, Shannon Williams"
+date: "5/25/2021"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+
+This document provides a (very) brief overview of Sequential Monte Carlo (SMC) methods and Stochastic Volatility (SV) models alongside an implementation in both `R` and `Rcpp` to demonstrate state (and parameter) estimation in this context. We start by introducing SMC, followed by a similar introduction of SV models. This leads us on to demonstrate our implementation(s) of a bootstrap particle filter for state estimation, before finally an implementation of the SMC^2 algorithm, which simultaneously estimates the parameters and the states. 
+
+## Sequential Monte Carlo
+
+Sequential Monte Carlo methods refer to a set of simulation-based filtering algorithms that enable us to compute posterior distributions for Bayesian state-space models (among others). SMC methods include *particle filters* in their various guises and extend Bayesian filtering capabilities beyond the widely known *Kalman* filter (and its own extensions) to nonlinear, non-Gaussian models.
+
+## Stochastic Volatility Models
+
+Generally, Stochastic Volatility (SV) models refer to financial models of log-returns ($Y_t=\log(p_t/p_{t-1})$) where the volatility is taken to be a stochastic process. This is as opposed to deterministic models such as (G)ARCH ([Generalised] auto-regressive conditional heteroscedastic). 
+
+The model we shall use here is the following
+$$ 
+  Y_t|X_t=x_t\sim\mathcal{N}(0,\exp(x_t))
+$$
+where $\{X_t\}$ is an auto-regressive process following
+$$
+  X_t = \mu + \rho(X_{t-1} - \mu) + U_t
+$$
+with $U_t\sim\mathcal{N}(0, \sigma^2)$. 
+
+### Data Generation
+
+We define a function to generate data according to the SV model:
+```{r, cache=TRUE, code=xfun::read_utf8('R/generateSVmodel.R'), gensv}
+```
+
+### Implementation
+
+To model the latent variables in the SV model we implement a bootstrap particle filter in `R`. To aid further generalisation, we define an API using an OOP approach, by defining a framework based around the Feynman-Kac formalism and implementing a specific class for the SV model. The particle filter then relies only on the Feynman-Kac structure and could in principle take any object implementing that API (though here we only implement the specific SV class).
+
+```{r, cache=TRUE, code=xfun::read_utf8('R/Bootstrap_SV.R'), bootR}
+```
+
+and additionally in `C++` making use of the `Rcpp` package in order to make simulations more computationally manageable. We go on to test that a) the results match (excluding variations due to unset random seeds in C++) and b) that the C++ implementation is indeed faster than in `R`. We aim to replicate the API defined in the `R` code above in `Rcpp` for ease of use.
+
+```{cc, cache=TRUE, code=xfun::read_utf8('src/particles.cpp'), particles}
+```
+
+First generate some data according to the SV model.
+```{r, test}
+detach("package:smc", unload=TRUE)
+rm(list = ls())
+library(smc)
+library(Rcpp)
+
+set.seed(1)
+
+tmax <- 500
+mu <- -1
+rho <- 0.95
+sigma <- 0.15
+N <- 5000
+
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax, mean = 0, sd = sqrt(exp(Xt))))
+```
+
+Run the `R` particle filter implementation, by first instantiating an SV object with given parameters and then running this through the bootstrap PF.
+```{r, RPF}
+boot_sv <- Bootstrap_SV$new(data = Yt, mu = -1, sigma = 0.15, rho = 0.95)
+
+output <- bootstrap_filter(boot_sv, N, tmax)
+```
+
+For the `Rcpp` version we must load the associated package exposed to `R`, initialise the `Rcpp` exposed class and then run the particle filter. 
+```{r, RcppPF}
+mod <- Module("particles", PACKAGE="smc")
+Bootstrap_SV_C <- mod$Bootstrap_SV_C
+boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
+output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+```
+
+Plot the mean outputs from the R and Rcpp versions over the true latent variable. We see that the `Rcpp` version (in green) is more or less identical to the (red) `R` version. The difference we attribute to random seeds.
+```{r, plot}
+par(mfrow = c(1,2))
+plot(Xt, type = "l")
+lines(output$mx, col = "red")
+lines(output2$mx, col="green")
+plot(1:tmax, output$ess, type = "l")
+
+# Delete the outputs to avoid running out of memory
+rm(output)
+rm(output2)
+gc()
+```
+
+We now verify that the `Rcpp` version is faster than the `R` implementation using the `microbenchmark` package:
+```{r, bench}
+library(microbenchmark)
+
+run_filter <- function(filter_fn, ...) {
+  out <- filter_fn(...)
+  rm(out)
+  gc()
+  return(NA)
+}
+funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
+
+bench_res <- microbenchmark(list=setNames(funcs, c("R","Rcpp")),
+               times=5L)
+
+print(bench_res, signif=3)
+```
+
+## SMC^2
+
+The particle filter implementation above relies on knowing the parameters $\theta, \rho, \mu$ *a priori*. Of course, this is not likely in any realistic scenario, so we must be able to estimate these parameters as well. Here we choose to implement the SMC^2 algorithm to simultaneously estimate the parameters alongside state estimation with the particle filter.
+

@@ -5,6 +5,17 @@
 
 using namespace Rcpp;
 
+// eff_particle_no
+double eff_particle_no(const NumericVector w);
+RcppExport SEXP _smc_eff_particle_no(SEXP wSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericVector >::type w(wSEXP);
+    rcpp_result_gen = Rcpp::wrap(eff_particle_no(w));
+    return rcpp_result_gen;
+END_RCPP
+}
 // systematic_resampling
 IntegerVector systematic_resampling(const NumericVector W);
 RcppExport SEXP _smc_systematic_resampling(SEXP WSEXP) {
@@ -16,24 +27,13 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
-// parallelVectorSum
-double parallelVectorSum(NumericVector x);
-RcppExport SEXP _smc_parallelVectorSum(SEXP xSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< NumericVector >::type x(xSEXP);
-    rcpp_result_gen = Rcpp::wrap(parallelVectorSum(x));
-    return rcpp_result_gen;
-END_RCPP
-}
 
 RcppExport SEXP _rcpp_module_boot_particles();
 RcppExport SEXP _rcpp_module_boot_test();
 
 static const R_CallMethodDef CallEntries[] = {
+    {"_smc_eff_particle_no", (DL_FUNC) &_smc_eff_particle_no, 1},
     {"_smc_systematic_resampling", (DL_FUNC) &_smc_systematic_resampling, 1},
-    {"_smc_parallelVectorSum", (DL_FUNC) &_smc_parallelVectorSum, 1},
     {"_rcpp_module_boot_particles", (DL_FUNC) &_rcpp_module_boot_particles, 0},
     {"_rcpp_module_boot_test", (DL_FUNC) &_rcpp_module_boot_test, 0},
     {NULL, NULL, 0}
