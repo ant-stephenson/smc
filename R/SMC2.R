@@ -24,7 +24,7 @@ pmmh_onestep_rcpp <- function(fk_model, theta, x, A, mu_prior, sd_prior, sd_prop
   # update theta with random walk proposal
   # theta_prop <- theta + rnorm(1, mean = 0, sd = sd_prop)
   theta_prop <- c()
-  theta_prop[1] <- theta + rnorm(1, mean = 0, sd = sd_prop[1])
+  theta_prop[1] <- theta[1] + rnorm(1, mean = 0, sd = sd_prop[1])
   theta_prop[2] <- exp(log(theta[2]) + rnorm(1, mean = 0, sd = sd_prop[2]))
   # update X and A with boostrap filter
   if (tn > 0) bs_result <- bootstrap_filter_rcpp(fk_model, N, tn)
@@ -82,7 +82,7 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
         
         # use population of thetas to improve sampling
         mut <- sapply(1:2, function(k) sum(Wm[t-1,] * thetas[t-1, ,k])/sum(Wm[t-1,]))
-        sd_t <- sapply(1:2, function(k) sqrt(sum(Wm[t-1,] * (thetas[t-1,,k]-mut[s])^2)/sum(Wm[t-1,])))
+        sd_t <- sapply(1:2, function(k) sqrt(sum(Wm[t-1,] * (thetas[t-1,,k]-mut[k])^2)/sum(Wm[t-1,])))
         
         pmmh_results <- pmmh_onestep_rcpp(sv_models[[s]], thetas[t-1, s,], x, A,
                                           mut, sd_prior, sd_t)
