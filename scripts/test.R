@@ -55,19 +55,18 @@ gc()
 
 
 ## SMC^2
-# tmax <- 1000
-# mu <- -1
-# rho <- 0.95
-# sigma <- 0.15
-# Xt <- generate_SV_data(mu, rho, sigma, tmax)
-# Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
+tmax <- 1000
+mu <- -1
+rho <- 0.95
+sigma <- 0.15
+Xt <- generate_SV_data(mu, rho, sigma, tmax)
+Yt <- as.matrix(rnorm(tmax+1, mean = 0, sd = sqrt(exp(Xt))))
 Nx <- 500
 Nt <- 100
-mu_prior = c(0.0, 0.2)
-sd_prior <- c(0.5, 0.1)
+mu_prior <- c(0, 0.5)
+sigma_prior <- c(2, 2)
 sd_prop <- c(1.5, 1.0)
-smc_results <- smc_squared_rcpp(Yt, Nx, Nt, sigma, rho, mu_prior, 
-                                sd_prior, sd_prop)
+smc_results <- smc_squared_rcpp2(Yt, Nx, Nt, sigma, rho, mu_prior, sigma_prior, sd_prop)
 # check convergence of parameters
 par(mfrow = c(2,1))
 plot(rowMeans(smc_results$thetas[,,1]), type="l")
