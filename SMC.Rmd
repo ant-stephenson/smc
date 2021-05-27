@@ -46,13 +46,11 @@ To model the latent variables in the SV model we implement a bootstrap particle 
 
 and additionally in `C++` making use of the `Rcpp` package in order to make simulations more computationally manageable. We go on to test that a) the results match (excluding variations due to unset random seeds in C++) and b) that the C++ implementation is indeed faster than in `R`. We aim to replicate the API defined in the `R` code above in `Rcpp` for ease of use.
 
-```{cc, cache=TRUE, code=xfun::read_utf8('src/particles.cpp'), particles}
+```{Rcpp, eval=FALSE, cache=TRUE, code=xfun::read_utf8('src/particles.cpp'), particles}
 ```
 
 First generate some data according to the SV model.
 ```{r, test}
-detach("package:smc", unload=TRUE)
-rm(list = ls())
 library(smc)
 library(Rcpp)
 
@@ -77,16 +75,16 @@ output <- bootstrap_filter(boot_sv, N, tmax)
 
 For the `Rcpp` version we must load the associated package exposed to `R`, initialise the `Rcpp` exposed class and then run the particle filter. 
 ```{r, RcppPF}
-mod <- Module("particles", PACKAGE="smc")
-Bootstrap_SV_C <- mod$Bootstrap_SV_C
+Bootstrap_SV_C <- Bootstrap_SV_C
 boot_sv_rcpp <- new(Bootstrap_SV_C, Yt, -1, 0.15, 0.95)
-output2 <- mod$bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
+output2 <- bootstrap_filter_rcpp(boot_sv_rcpp, N ,tmax)
 ```
 
 Plot the mean outputs from the R and Rcpp versions over the true latent variable. We see that the `Rcpp` version (in green) is more or less identical to the (red) `R` version. The difference we attribute to random seeds.
 ```{r, plot}
 library(latex2exp)
-pdf("../doc/figs/state_estimation_pf.pdf", width=8, height=3)
+pdf("docs/figs/state_estimation_pf.pdf", width=8, height=3)
+par(mar=c(1,1,1,1))
 par(mfrow = c(2,1))
 plot(Xt, type = "l", ylab=TeX("$X_t$"), main="")
 lines(output$mx, col = "red")
@@ -111,7 +109,7 @@ run_filter <- function(filter_fn, ...) {
   gc()
   return(NA)
 }
-funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", mod$bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
+funcs <- c(call("run_filter", bootstrap_filter, boot_sv, N, tmax), call("run_filter", bootstrap_filter_rcpp, boot_sv_rcpp, N, tmax))
 
 bench_res <- microbenchmark(list=setNames(funcs, c("R","Rcpp")),
                times=5L)
@@ -148,12 +146,10 @@ rm(smc_results)
 
 Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
 ```{r, smc2 out}
-pdf("../doc/figs/param_estimation_smc2.pdf", width=8, height=3)
-par(mfrow = c(2,1))
-plot(rowMeans(thetas[,,1]), ylab=Tex("$\mu$"), type="l")
+pdf("docs/figs/param_estimation_smc2.pdf", width=8, height=3)
+par(mfrow = c(1,1))
+plot(rowMeans(thetas), ylab=Tex("$\mu$"), type="l")
 lines(rep(mu, tmax+1), col="red")
-plot(rowMeans(thetas[,,2]), ylab=Tex("$\sigma^2$"), type="l")
-lines(rep(sigma, tmax+1), col="red")
 dev.off()
 ```
 
@@ -179,9 +175,9 @@ Wm2 <- smc_results2$Wm
 rm(smc_results2)
 ```
 
-Before we run the bootstrap filter again, first analyse the output from SMC^2. We start by plotting the convergence of the parameters:
+Again we plot the convergence of the parameters, as we did for the single parameter version.
 ```{r, smc22 out}
-pdf("../doc/figs/param_estimation_smc22.pdf", width=8, height=3)
+pdf("docs/figs/param_estimation_smc22.pdf", width=8, height=3)
 par(mfrow = c(2,1))
 plot(rowMeans(thetas2[,,1]), ylab=Tex("$\mu$"), type="l")
 lines(rep(mu, tmax+1), col="red")
@@ -190,7 +186,6 @@ lines(rep(sigma, tmax+1), col="red")
 dev.off()
 ```
 We can see that the algorithm does a very poor job of estimating both $\mu$ and $\sigma^2$ together, so we opt to ignore this implementation when considering the final filtering step and use only the single parameter version
-
 
 Now to run the bootstrap filter, we use the population of thetas at the final step to get the estimate for the parameters $\mu$ and $\sigma$ to use in the final state estimation step.
 ```{r, params}
@@ -203,7 +198,7 @@ Plot the output from the final bootstrap particle filter, using the parameters e
 boot_sv_smc2 <- new(Bootstrap_SV_C, Yt, mut, sigma_t, 0.95)
 output_smc2 <- mod$bootstrap_filter_rcpp(boot_sv_smc2, N ,tmax)
 
-pdf("../doc/figs/state_estimation_smc2.pdf", width=8, height=3)
+pdf("docs/figs/state_estimation_smc2.pdf", width=8, height=3)
 par(mfrow = c(2,1))
 plot(Xt, type = "l", ylab=TeX("$X_t$"))
 lines(output_smc2$mx, col = "red")
