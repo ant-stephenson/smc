@@ -97,7 +97,6 @@ smc_squared_rcpp <- function(Yt, Nx, Nt, sigma, rho, mu_prior, sd_prior, sd_prop
     for (s in 1:Nt) {
       xs[t, s, ] <- sv_models[[s]]$sample_m(xs[t-1, s, As[t-1, s, ]])
       wm[t, s] <- wm[t-1, s] + log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, ]))) / Nx)
-        #log(sum(exp(sv_models[[s]]$logG(t, xs[t, s, As[t-1, s, ]]))) / Nx)
     }
     Wm[t, ] <- exp(wm[t, ]) / sum(exp(wm[t, ]))
   }
